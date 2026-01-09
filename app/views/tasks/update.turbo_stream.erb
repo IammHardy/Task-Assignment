@@ -1,0 +1,7 @@
+<%= turbo_stream.replace "status_<%= @task.id %>" do %>
+  <%= render "tasks/status", task: @task %>
+<% end %>
+
+<%= turbo_stream.replace "task-stats",
+      partial: "dashboard/task_stats",
+      locals: { tasks: Task.all } %>

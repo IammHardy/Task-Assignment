@@ -1,0 +1,11 @@
+<tr>
+  <td><%= task.title %></td>
+  <td><%= task.description %></td>
+  <td>
+    <%= form_with model: task, url: task_path(task), method: :patch, data: { turbo_frame: "task_#{task.id}" } do |f| %>
+      <%= f.select :status, Task.statuses.keys.map { |s| [s.humanize, s] }, selected: task.status %>
+      <%= f.submit "Update" %>
+    <% end %>
+  </td>
+  <td><%= task.due_date %></td>
+</tr>

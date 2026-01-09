@@ -1,0 +1,40 @@
+<h1>Employee Dashboard</h1>
+
+<p>Welcome, <%= @employee.name %></p>
+
+<table border="1" cellpadding="5">
+  <thead>
+    <tr>
+      <th>Task</th>
+      <th>Description</th>
+      <th>Status</th>
+      <th>Deadline</th>
+      <th>Update</th>
+    </tr>
+  </thead>
+  <tbody id="employee-task-table">
+    <% @tasks.each do |task| %>
+      <tr data-task-id="<%= task.id %>">
+        <td><%= task.title %></td>
+        <td><%= task.description %></td>
+        <td class="status"><%= task.status %></td>
+        <td><%= task.due_date %></td>
+        <td>
+          <select class="status-select">
+  <% Task.statuses.keys.each do |s| %>
+    <option value="<%= s %>" <%= "selected" if task.status == s %>>
+      <%= s.humanize %>
+    </option>
+  <% end %>
+</select>
+
+          <button class="update-btn">Update</button>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p id="employee-msg" style="color:green;"></p>
+
+<%= javascript_include_tag "employee_tasks" %>

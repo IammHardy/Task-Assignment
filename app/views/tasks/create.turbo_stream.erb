@@ -1,0 +1,5 @@
+<%= turbo_stream.prepend "tasks", partial: "tasks/task", locals: { task: @task } %>
+<%= turbo_stream.replace "task-form", partial: "tasks/form", locals: { task: Task.new, employees: @employees } %>
+<%= turbo_stream.replace "task-msg" do %>
+  <div style="color: green;">Task created successfully</div>
+<% end %>

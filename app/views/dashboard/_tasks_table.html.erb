@@ -1,0 +1,20 @@
+<table border="1" cellpadding="5">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Assigned To</th>
+      <th>Status</th>
+      <th>Due Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% tasks.each do |task| %>
+      <tr id="task-<%= task.id %>">
+        <td><%= task.title || "-" %></td>
+        <td><%= task.user&.name || "Unassigned" %></td>
+        <td><%= task.status&.humanize || "Pending" %></td>
+        <td><%= task.due_date || "-" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

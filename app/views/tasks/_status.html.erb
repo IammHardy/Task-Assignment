@@ -1,0 +1,9 @@
+<% if task.status != "completed" %>
+  <%= button_to "Mark as Completed",
+                task_path(task),
+                method: :patch,
+                form: { data: { turbo: true } },
+                params: { task: { status: "completed" } } %>
+<% else %>
+  ✅
+<% end %>

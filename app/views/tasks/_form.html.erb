@@ -1,0 +1,44 @@
+<turbo-frame id="task-form">
+
+<% if task.errors.any? %>
+  <div class="errors">
+    <ul>
+      <% task.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+
+<%= form_with model: task, url: tasks_path, local: false do |f| %>
+  <div>
+    <%= f.label :title %><br>
+    <%= f.text_field :title, required: true %>
+  </div>
+
+  <div>
+    <%= f.label :description %><br>
+    <%= f.text_area :description %>
+  </div>
+
+  <div>
+    <%= f.label :user_id, "Assign to" %><br>
+    <%= f.select :user_id, employees.collect { |e| [e.name, e.id] }, prompt: "Select Employee", required: true %>
+  </div>
+
+  <div>
+    <%= f.label :status %><br>
+    <%= f.select :status, [["In-progress", "in_progress"], ["Completed", "completed"]], required: true %>
+  </div>
+
+  <div>
+    <%= f.label :due_date %><br>
+    <%= f.date_field :due_date, required: true %>
+  </div>
+
+  <div>
+    <%= f.submit "Create Task" %>
+  </div>
+<% end %>
+</turbo-frame>
