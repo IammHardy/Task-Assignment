@@ -1,2 +1,31 @@
-<p>Total tasks: <%= tasks.count %></p>
-<p>Completed: <%= tasks.completed.count %></p>
+<!-- app/views/dashboard/_task_stats.html.erb -->
+<% total = tasks.count %>
+<% pending = tasks.select { |t| t.status == "pending" }.count %>
+<% completed = tasks.select { |t| t.status == "completed" }.count %>
+<% overdue = tasks.select { |t| t.status == "overdue" }.count %>
+
+<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition w-full flex items-center space-x-2">
+  <h3 class="text-gray-500 font-semibold">Total Tasks</h3>
+  <p class="text-2xl font-bold text-gray-800"><%= total %></p>
+</div>
+<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition w-full">
+  <h3 class="text-gray-500 font-semibold mb-2">Pending Tasks</h3>
+  <p class="text-2xl font-bold text-yellow-600"><%= pending %></p>
+  <div class="bg-gray-200 h-2 rounded-full overflow-hidden">
+    <div class="h-2 bg-yellow-500 animate-fill" data-width="<%= total > 0 ? (pending.to_f / total * 100).round : 0 %>"></div>
+  </div>
+</div>
+<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition w-full">
+  <h3 class="text-gray-500 font-semibold mb-2">Completed Tasks</h3>
+  <p class="text-2xl font-bold text-green-600"><%= completed %></p>
+  <div class="bg-gray-200 h-2 rounded-full overflow-hidden">
+    <div class="h-2 bg-green-500 animate-fill" data-width="<%= total > 0 ? (completed.to_f / total * 100).round : 0 %>"></div>
+  </div>
+</div>
+<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition w-full">
+  <h3 class="text-gray-500 font-semibold mb-2">Overdue Tasks</h3>
+  <p class="text-2xl font-bold text-red-600"><%= overdue %></p>
+  <div class="bg-gray-200 h-2 rounded-full overflow-hidden">
+    <div class="h-2 bg-red-500 animate-fill" data-width="<%= total > 0 ? (overdue.to_f / total * 100).round : 0 %>"></div>
+  </div>
+</div>

@@ -1,2 +1,7 @@
-<h2>AI Suggestions</h2>
-<p><%= ai_suggestions %></p>
+<div id="ai-suggestions">
+  <ul class="list-disc list-inside space-y-1">
+    <% suggestions.each do |suggestion| %>
+      <li class="text-gray-700"><%= suggestion %></li>
+    <% end %>
+  </ul>
+</div>

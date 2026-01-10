@@ -1,7 +1,5 @@
-<%= turbo_stream.replace "status_<%= @task.id %>" do %>
-  <%= render "tasks/status", task: @task %>
+<%= turbo_stream.replace dom_id(@task), partial: "dashboard/task_row", locals: { task: @task } %>
+<%= turbo_stream.replace "task-form", partial: "tasks/form", locals: { task: Task.new, employees: User.where(role: "Employee") } %>
+<%= turbo_stream.replace "task-msg" do %>
+  <div class="text-blue-700 font-semibold animate-fade-in">Task updated successfully!</div>
 <% end %>
-
-<%= turbo_stream.replace "task-stats",
-      partial: "dashboard/task_stats",
-      locals: { tasks: Task.all } %>

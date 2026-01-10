@@ -1,20 +1,18 @@
-<table border="1" cellpadding="5">
-  <thead>
-    <tr>
-      <th>Title</th>
-      <th>Assigned To</th>
-      <th>Status</th>
-      <th>Due Date</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% tasks.each do |task| %>
-      <tr id="task-<%= task.id %>">
-        <td><%= task.title || "-" %></td>
-        <td><%= task.user&.name || "Unassigned" %></td>
-        <td><%= task.status&.humanize || "Pending" %></td>
-        <td><%= task.due_date || "-" %></td>
+<!-- app/views/dashboard/_tasks_table.html.erb -->
+<div class="overflow-x-auto">
+  <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <%= render partial: "tasks/task", collection: tasks, as: :task %>
+    </tbody>
+  </table>
+</div>

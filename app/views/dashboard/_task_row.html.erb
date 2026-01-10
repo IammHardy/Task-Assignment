@@ -1,5 +1,4 @@
-<!-- app/views/tasks/_task.html.erb -->
-<tr id="<%= dom_id(task) %>" class="hover:bg-gray-100 transition duration-200 ease-in-out">
+<tr id="<%= dom_id(task) %>" class="hover:bg-gray-100 transition duration-300 ease-in-out animate-fade-in">
   <td class="px-6 py-4 text-gray-800 font-medium"><%= task.title %></td>
   <td class="px-6 py-4 text-gray-700"><%= truncate(task.description, length: 50) %></td>
   <td class="px-6 py-4 text-gray-700"><%= task.user&.name || "Unassigned" %></td>
@@ -16,11 +15,8 @@
   </td>
   <td class="px-6 py-4 text-gray-700"><%= task.due_date&.strftime("%b %d, %Y") || "N/A" %></td>
   <td class="px-6 py-4 flex space-x-2">
-    <%= link_to "Edit", edit_task_path(task), class: "bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" %>
-   <%= button_to "Delete", task_path(task),
-      method: :delete,
-      data: { turbo_confirm: "Are you sure?" },
-      class: "bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" %>
+    <%= link_to "Edit", "#", class: "bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs cursor-not-allowed" %>
+    <%= link_to "Delete", task_path(task), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" %>
     <% unless task.status == "completed" %>
       <%= link_to "Mark Complete", complete_task_path(task), method: :patch, class: "bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs" %>
     <% end %>

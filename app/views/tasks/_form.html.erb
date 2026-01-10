@@ -1,8 +1,8 @@
-<%= form_with model: task, url: tasks_path, data: { turbo: true } do |f| %>
+<%= form_with model: task, url: tasks_path, data: { turbo: true }, class: "bg-white shadow rounded-lg p-6 space-y-4 border border-gray-200" do |f| %>
 
   <% if task&.errors&.any? %>
-    <div class="errors">
-      <ul>
+    <div class="bg-red-100 text-red-700 p-3 rounded">
+      <ul class="list-disc list-inside">
         <% task.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
         <% end %>
@@ -10,33 +10,42 @@
     </div>
   <% end %>
 
+  <!-- Title -->
   <div>
-    <%= f.label :title %><br>
-    <%= f.text_field :title, required: true %>
+    <%= f.label :title, class: "block font-semibold text-gray-700 mb-1" %>
+    <%= f.text_field :title, required: true, class: "w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
   </div>
 
+  <!-- Description -->
   <div>
-    <%= f.label :description %><br>
-    <%= f.text_area :description, rows: 3 %>
+    <%= f.label :description, class: "block font-semibold text-gray-700 mb-1" %>
+    <%= f.text_area :description, rows: 3, class: "w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
   </div>
 
+  <!-- Assign to -->
   <div>
-    <%= f.label :user_id, "Assign to" %><br>
+    <%= f.label :user_id, "Assign to", class: "block font-semibold text-gray-700 mb-1" %>
     <%= f.select :user_id,
         employees.map { |e| [e.name, e.id] },
-        include_blank: "Select employee" %>
+        { include_blank: "Select employee" },
+        class: "w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
   </div>
 
+  <!-- Status -->
   <div>
-    <%= f.label :status %><br>
-    <%= f.select :status, ["pending", "in_progress", "completed"] %>
+    <%= f.label :status, class: "block font-semibold text-gray-700 mb-1" %>
+    <%= f.select :status, ["pending", "in_progress", "completed"], {}, class: "w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
   </div>
 
+  <!-- Due Date -->
   <div>
-    <%= f.label :due_date %><br>
-    <%= f.date_field :due_date %>
+    <%= f.label :due_date, class: "block font-semibold text-gray-700 mb-1" %>
+    <%= f.date_field :due_date, class: "w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
   </div>
 
-  <%= f.submit "Create Task" %>
+  <!-- Submit -->
+  <div>
+    <%= f.submit "Create Task", class: "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition duration-200" %>
+  </div>
 
 <% end %>

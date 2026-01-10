@@ -1,30 +1,31 @@
 # app/controllers/dashboard_controller.rb
 class DashboardController < ApplicationController
-  before_action :load_tasks_and_employees
+  before_action :load_users_and_roles
 
   def index
-    # Needed for the task form
     @task = Task.new
+    @employees = User.where(role: "Employee")
+    @tasks = Task.includes(:user).all
 
-    ai_service = AiWorkflowService.new(@tasks, @employees)
+    ai_service = AiWorkflowService.new(@tasks, User.where(role: "Manager"))
     @ai_summary, @ai_suggestions = ai_service.progress_and_suggestions
   end
 
-  # Called when user clicks "Refresh AI"
   def ai_refresh
-    ai_service = AiWorkflowService.new(@tasks, @employees)
+    @tasks = Task.includes(:user).all
+    ai_service = AiWorkflowService.new(@tasks, User.where(role: "Manager"))
     @ai_summary, @ai_suggestions = ai_service.progress_and_suggestions
 
     respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to dashboard_index_path }
+      format.turbo_stream { render turbo_stream: turbo_stream.replace("ai-suggestions", partial: "dashboard/ai_suggestions", locals: { suggestions: @ai_suggestions }) }
+      format.html { redirect_to dashboard_index_path, notice: "AI refreshed!" }
     end
   end
 
   private
 
-  def load_tasks_and_employees
-    @tasks = Task.includes(:user)
-    @employees = User.where(role: "Employee")
+  def load_users_and_roles
+    @managers = User.where(role: "Manager")
+    @employees_all = User.where(role: "Employee")
   end
 end

@@ -1,45 +1,135 @@
-<h1>Manager Dashboard</h1>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-<h2>Tasks</h2>
+  <!-- Page Header -->
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-4h6v4m0 0v-4h2v4m-6 0H5v-4h2v4z" />
+      </svg>
+      Manager Dashboard
+    </h1>
+    <button id="toggle-dashboard" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+      Switch Dashboard
+    </button>
+  </div>
 
-<turbo-frame id="tasks-table">
-  <%= render partial: "dashboard/tasks_table", locals: { tasks: @tasks } %>
-</turbo-frame>
+  <!-- Manager Dashboard -->
+  <div class="dashboard-section" id="manager-dashboard">
 
-<turbo-frame id="task-stats">
-  <%= render partial: "dashboard/task_stats", locals: { tasks: @tasks } %>
-</turbo-frame>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <%= render partial: "dashboard/task_stats", locals: { tasks: @tasks } %>
+    </div>
 
-<hr>
+    <!-- Tasks Table -->
+    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700 flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M5 8h14M5 4h14v16H5V4z" />
+        </svg>
+        Tasks
+      </h2>
+      <turbo-frame id="tasks-table">
+        <%= render partial: "dashboard/tasks_table", locals: { tasks: @tasks } %>
+      </turbo-frame>
+    </div>
 
-<h2>Create Task</h2>
+    <!-- Create Task Form -->
+    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700 flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Create Task
+      </h2>
+      <turbo-frame id="task-form">
+        <%= render "tasks/form", task: @task, employees: @employees %>
+      </turbo-frame>
+      <turbo-frame id="task-msg"></turbo-frame>
+    </div>
 
-<turbo-frame id="task-form">
-  <%= render "tasks/form", task: @task, employees: @employees %>
-</turbo-frame>
+    <!-- AI Team Summary -->
+    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+      <h2 class="text-2xl font-semibold mb-2 text-gray-700 flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m2 0h2a2 2 0 002-2V8a2 2 0 00-2-2h-4.586a1 1 0 00-.707.293l-1.414 1.414A1 1 0 0112.586 8H6a2 2 0 00-2 2v6a2 2 0 002 2h2" />
+        </svg>
+        AI Team Summary
+      </h2>
+      <p class="text-gray-700"><%= @ai_summary %></p>
+    </div>
 
-<turbo-frame id="task-msg"></turbo-frame>
+    <!-- AI Suggestions -->
+    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-semibold text-gray-700 flex items-center space-x-2">
+      <svg ...></svg>
+      AI Suggestions
+    </h2>
+    <button id="toggle-ai-suggestions" class="text-sm text-blue-600 hover:underline">Show/Hide</button>
+  </div>
 
-<%= turbo_stream_from "task_stats" %>
-<%= turbo_stream_from "tasks_table" %>
-
-<h2>AI Team Summary</h2>
-<div id="ai-summary">
-  <p><%= @ai_summary %></p>
+  <turbo-frame id="ai-suggestions">
+    <%= render "dashboard/ai_suggestions", suggestions: @ai_suggestions %>
+  </turbo-frame>
 </div>
 
-<h2>AI Suggestions</h2>
-<div id="ai-suggestions">
-  <ul>
-    <% @ai_suggestions.each do |suggestion| %>
-      <li><%= suggestion %></li>
-    <% end %>
-  </ul>
+
+    <!-- Refresh AI Button -->
+    <div class="mb-8">
+      <%= button_to "Refresh AI",
+          ai_refresh_dashboard_index_path,
+          method: :post,
+          form: { data: { turbo_stream: true } },
+          class: "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition" %>
+    </div>
+
+  </div>
+
+  <!-- Employee Dashboard (Hidden) -->
+  <div class="dashboard-section hidden" id="employee-dashboard">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12 12 0 010 6.844L12 14z" />
+      </svg>
+      Employee Dashboard
+    </h2>
+    <p class="text-gray-700">This is an alternate dashboard view for employees. Customize as needed.</p>
+  </div>
+
 </div>
 
-<%= button_to "Refresh AI",
-    ai_refresh_dashboard_index_path,
-    method: :post,
-    form: { data: { turbo_stream: true } } %>
+<!-- JS for toggles & animations -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
 
+  // Dashboard toggle
+  const toggleBtn = document.getElementById("toggle-dashboard");
+  const managerSection = document.getElementById("manager-dashboard");
+  const employeeSection = document.getElementById("employee-dashboard");
 
+  toggleBtn.addEventListener("click", () => {
+    managerSection.classList.toggle("hidden");
+    employeeSection.classList.toggle("hidden");
+  });
+
+  // AI Suggestions toggle
+  const aiToggleBtn = document.getElementById("toggle-ai-suggestions");
+  const aiSection = document.getElementById("ai-suggestions");
+
+  aiToggleBtn.addEventListener("click", () => {
+    aiSection.classList.toggle("hidden");
+  });
+
+  // Animate progress bars
+  document.querySelectorAll(".animate-fill").forEach(bar => {
+    const width = bar.dataset.width;
+    setTimeout(() => {
+      bar.style.width = width + "%";
+      bar.classList.add("transition-all", "duration-1000", "ease-out");
+    }, 100);
+  });
+
+});
+</script>
