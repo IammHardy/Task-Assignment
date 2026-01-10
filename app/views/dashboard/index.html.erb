@@ -14,47 +14,32 @@
 
 <h2>Create Task</h2>
 
-<div id="task-form">
-  <%= form_with model: @task, url: tasks_path, local: false do |f| %>
-    <div>
-      <%= f.label :title %><br>
-      <%= f.text_field :title %>
-    </div>
-
-    <div>
-      <%= f.label :description %><br>
-      <%= f.text_area :description %>
-    </div>
-
-    <div>
-      <%= f.label :user_id, "Assign to" %><br>
-      <%= f.select :user_id, @employees.collect { |e| [e.name, e.id] }, include_blank: "Select Employee" %>
-    </div>
-
-    <div>
-      <%= f.label :status %><br>
-      <%= f.select :status, [["In-progress", "in_progress"], ["Completed", "completed"]] %>
-    </div>
-
-    <div>
-      <%= f.label :due_date %><br>
-      <%= f.date_field :due_date %>
-    </div>
-
-    <div>
-      <%= f.submit "Create Task" %>
-    </div>
-  <% end %>
-</div>
-
-
-<turbo-frame id="task-msg">
- 
+<turbo-frame id="task-form">
+  <%= render "tasks/form", task: @task, employees: @employees %>
 </turbo-frame>
 
-
+<turbo-frame id="task-msg"></turbo-frame>
 
 <%= turbo_stream_from "task_stats" %>
 <%= turbo_stream_from "tasks_table" %>
-<%= turbo_stream_from "manager_dashboard" %>
+
+<h2>AI Team Summary</h2>
+<div id="ai-summary">
+  <p><%= @ai_summary %></p>
+</div>
+
+<h2>AI Suggestions</h2>
+<div id="ai-suggestions">
+  <ul>
+    <% @ai_suggestions.each do |suggestion| %>
+      <li><%= suggestion %></li>
+    <% end %>
+  </ul>
+</div>
+
+<%= button_to "Refresh AI",
+    ai_refresh_dashboard_index_path,
+    method: :post,
+    form: { data: { turbo_stream: true } } %>
+
 

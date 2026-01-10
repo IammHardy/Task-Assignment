@@ -37,6 +37,9 @@ gem "kamal", require: false
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
 
+gem "openai"
+gem "ruby-openai"
+
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 # gem "image_processing", "~> 1.2"
 
@@ -55,6 +58,7 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
+gem 'dotenv-rails', groups: [:development, :test]
 
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]

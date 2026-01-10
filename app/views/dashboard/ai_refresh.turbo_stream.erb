@@ -1,0 +1,11 @@
+<%= turbo_stream.replace "ai-summary" do %>
+  <p><%= @ai_summary %></p>
+<% end %>
+
+<%= turbo_stream.replace "ai-suggestions" do %>
+  <ul>
+    <% @ai_suggestions.each do |suggestion| %>
+      <li><%= suggestion %></li>
+    <% end %>
+  </ul>
+<% end %>

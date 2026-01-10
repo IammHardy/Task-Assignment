@@ -28,6 +28,7 @@ class TasksController < ApplicationController
   end
 
   def update
+    @employees = User.where(role: "Employee")
     respond_to do |format|
       if @task.update(task_params)
         format.turbo_stream do
