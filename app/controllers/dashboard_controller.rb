@@ -1,35 +1,80 @@
 class DashboardController < ApplicationController
   before_action :set_current_user
 
-  def index
-    @active_view = params[:view]&.downcase || "admin"
+ def index
+  @active_view = params[:view]&.downcase || "admin"
 
-    @managers = User.where(role: "Manager")
-    @employees = User.where(role: "Employee")
+  @managers = User.where(role: "Manager")
+  @employees = User.where(role: "Employee")
 
-    
-
-    case @active_view
-    when "admin"
-      @tasks_to_show = Task.includes(:user).all
-    when "manager"
-      if params[:manager_id].present?
-        @active_manager = @managers.find(params[:manager_id])
-        @employees_to_show = @employees.where(manager_id: @active_manager.id)
-        @tasks_to_show = Task.joins(:user).where(users: { manager_id: @active_manager.id })
-      else
-        @tasks_to_show = Task.joins(:user).where(users: { manager_id: @managers.pluck(:id) })
-        @employees_to_show = @employees
-      end
-    when "employee"
-      if params[:employee_id].present?
-        @active_employee = @employees.find(params[:employee_id])
-        @tasks_to_show = Task.where(user_id: @active_employee.id).includes(:user, :manager)
-      else
-        @tasks_to_show = Task.includes(:user).where(user_id: @employees.pluck(:id))
-      end
+  case @active_view
+  when "admin"
+    @tasks_to_show = Task.includes(:user).all
+  when "manager"
+    if params[:manager_id].present?
+      @active_manager = @managers.find(params[:manager_id])
+      @employees_to_show = @employees.where(manager_id: @active_manager.id)
+      @tasks_to_show = Task.joins(:user).where(users: { manager_id: @active_manager.id })
+    else
+      @tasks_to_show = Task.joins(:user).where(users: { manager_id: @managers.pluck(:id) })
+      @employees_to_show = @employees
+    end
+  when "employee"
+    if params[:employee_id].present?
+      @active_employee = @employees.find(params[:employee_id])
+      @tasks_to_show = @active_employee.tasks.includes(:user)
+    else
+      @tasks_to_show = Task.includes(:user).where(user: @employees)
     end
   end
+
+  # Generate AI summary only for Admin or Manager
+  if @active_view.in?(%w[admin manager])
+    @ai_summary = generate_ai_summary(@tasks_to_show)
+  end
+end
+
+
+  def generate_ai_summary(tasks)
+  return "No tasks yet." if tasks.empty?
+
+  total = tasks.count
+  completed = tasks.select { |t| t.status == "completed" }.count
+  pending = tasks.select { |t| t.status == "pending" }.count
+  overdue = tasks.select { |t| t.status == "overdue" }.count
+
+  suggestions = []
+
+  # Highlight overdue tasks
+  overdue_tasks = tasks.select { |t| t.status == "overdue" }
+  suggestions << "⚠ #{overdue_tasks.count} task(s) are overdue!" if overdue_tasks.any?
+
+  # Suggest employees with many pending tasks
+  employees_pending = tasks.group_by(&:user).map { |u, t| [u.name, t.count { |task| task.status == "pending" }] }.to_h
+  max_pending = employees_pending.values.max
+  if max_pending && max_pending > 3
+    overworked = employees_pending.select { |_, v| v == max_pending }.keys.join(", ")
+    suggestions << "Consider reassigning tasks for overworked employee(s): #{overworked}."
+  end
+
+  summary_text = <<~TEXT
+    Total tasks: #{total}
+    Completed: #{completed}
+    Pending: #{pending}
+    Overdue: #{overdue}
+    Suggestions: #{suggestions.join(" ")}
+  TEXT
+
+  summary_text.strip
+end
+
+def generate_ai_suggestions(tasks)
+  overdue_tasks = tasks.select { |t| t.status == "overdue" }
+  overdue_tasks.map do |t|
+    "Task '#{t.title}' assigned to #{t.user.name} is overdue. Follow up!"
+  end
+end
+
 
  def mark_complete
     @task = Task.find(params[:id])
