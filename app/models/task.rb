@@ -1,5 +1,6 @@
 class Task < ApplicationRecord
   belongs_to :user
+  belongs_to :manager, class_name: "User", optional: true
 
   validates :title, :status, :due_date, presence: true
 

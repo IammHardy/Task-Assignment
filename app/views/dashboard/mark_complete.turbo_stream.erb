@@ -1,0 +1,11 @@
+<%= turbo_stream.replace "task_#{@task.id}" do %>
+  <tr class="bg-green-50">
+    <td class="border px-4 py-2"><%= @task.title %></td>
+    <td class="border px-4 py-2"><%= @task.user.name %></td>
+    <td class="border px-4 py-2"><%= @task.status.capitalize %></td>
+    <td class="border px-4 py-2"><%= @task.user.manager&.name || "Unassigned" %></td>
+    <td class="border px-4 py-2">
+      <span class="text-green-700 font-semibold">Completed</span>
+    </td>
+  </tr>
+<% end %>

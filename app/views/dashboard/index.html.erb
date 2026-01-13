@@ -15,7 +15,8 @@
     <label class="font-semibold">Select Manager:</label>
     <%= form_with url: dashboard_index_path, method: :get, local: true do |f| %>
       <%= f.hidden_field :view, value: "manager" %>
-      <%= f.select :manager_id, options_from_collection_for_select(@managers, :id, :name, params[:manager_id]), { prompt: "All Managers" }, class: "border rounded px-2 py-1" %>
+     <%= f.select :manager_id, options_from_collection_for_select(@managers, :id, :name, params[:manager_id]), { prompt: "All Managers" } %>
+
       <%= f.submit "Switch", class: "bg-green-600 text-white px-3 py-1 rounded" %>
     <% end %>
   </div>
@@ -27,7 +28,11 @@
     <label class="font-semibold">Select Employee:</label>
     <%= form_with url: dashboard_index_path, method: :get, local: true do |f| %>
       <%= f.hidden_field :view, value: "employee" %>
-      <%= f.select :employee_id, options_from_collection_for_select(@employees, :id, :name, params[:employee_id]), { prompt: "All Employees" }, class: "border rounded px-2 py-1" %>
+      <%= f.select :employee_id,
+      options_from_collection_for_select(@employees, :id, :name, params[:employee_id]),
+      { prompt: "Select Employee" } %>
+
+
       <%= f.submit "Switch", class: "bg-yellow-500 text-white px-3 py-1 rounded" %>
     <% end %>
   </div>
@@ -45,39 +50,96 @@
       </tr>
     </thead>
     <tbody>
-      <% @tasks_to_show.each do |task| %>
-        <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.status == 'overdue' ? 'bg-red-50' : '' %>">
-          <td class="border px-4 py-2"><%= task.title %></td>
-          <td class="border px-4 py-2"><%= task.user.name %></td>
-          <td class="border px-4 py-2"><%= task.status.capitalize %></td>
-        </tr>
-      <% end %>
-      <% if @tasks_to_show.empty? %>
-        <tr>
-          <td colspan="3" class="border px-4 py-2 text-center text-gray-500">No tasks found.</td>
-        </tr>
-      <% end %>
-    </tbody>
+  <% if @tasks_to_show.any? %>
+    <% @tasks_to_show.each do |task| %>
+      <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.status == 'overdue' ? 'bg-red-50' : '' %>">
+        <td class="border px-4 py-2"><%= task.title.presence || "Untitled Task" %></td>
+        <td class="border px-4 py-2"><%= task.user&.name || "Unassigned" %></td>
+        <td class="border px-4 py-2"><%= task.status.presence&.capitalize || "Pending" %></td>
+      </tr>
+    <% end %>
+  <% else %>
+    <tr>
+      <td colspan="3" class="border px-4 py-2 text-center text-gray-500">No tasks found.</td>
+    </tr>
+  <% end %>
+</tbody>
+
   </table>
 </div>
+
+<% if @active_view == "admin" %>
+  <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
+    <h2 class="text-2xl font-semibold mb-4">Assign Manager to Employee</h2>
+
+    <%= form_with url: assign_manager_dashboard_index_path, method: :post, local: true do |f| %>
+      <div class="mb-2">
+        <%= f.label :employee_id, "Select Employee" %>
+        <%= f.select :employee_id,
+              options_from_collection_for_select(@employees, :id, :name),
+              { prompt: "Select Employee" },
+              class: "border rounded px-2 py-1 w-full" %>
+      </div>
+
+      <div class="mb-4">
+        <%= f.label :manager_id, "Select Manager" %>
+        <%= f.select :manager_id,
+              options_from_collection_for_select(@managers, :id, :name),
+              { prompt: "Select Manager" },
+              class: "border rounded px-2 py-1 w-full" %>
+      </div>
+
+      <%= f.submit "Assign Manager",
+            class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" %>
+    <% end %>
+  </div>
+<% end %>
+
+
+
 
 <!-- Create Task Form (Admin & Manager only) -->
 <% if @active_view.in?(["admin", "manager"]) %>
   <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
     <h2 class="text-2xl font-semibold mb-4">Create Task</h2>
+<%= form_with scope: :task,
+              url: create_task_dashboard_index_path(view: @active_view),
+              local: true do |f| %>
 
-
-    <%= form_with model: @task, url: "#", local: true do |f| %>
   <div class="mb-2">
     <%= f.label :title %>
     <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
   </div>
+
+  <div class="mb-2">
+    <%= f.label :description %>
+    <%= f.text_area :description, rows: 3, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
   <div class="mb-2">
     <%= f.label :assign_to, "Assign to Employee" %>
-    <%= f.select :user_id, options_from_collection_for_select(@employees, :id, :name), { prompt: "Select Employee" }, class: "border rounded px-2 py-1 w-full" %>
+    <%= f.select :user_id,
+          options_from_collection_for_select(@employees, :id, :name),
+          { prompt: "Select Employee" },
+          class: "border rounded px-2 py-1 w-full" %>
   </div>
-  <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+
+  <div class="mb-2">
+    <%= f.label :assigned_date %>
+    <%= f.date_field :assigned_date, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
+  <div class="mb-4">
+    <%= f.label :due_date %>
+    <%= f.date_field :due_date, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
+  <%= f.submit "Create Task",
+        class: "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" %>
+
 <% end %>
+
+
 
   </div>
 <% end %>

@@ -1,118 +1,72 @@
-# Simple form object to make Rails happy in demo
-class TaskForm
-  include ActiveModel::Model
-  attr_accessor :title, :user_id
+class DashboardController < ApplicationController
+  before_action :set_current_user
+
+  def index
+    @active_view = params[:view]&.downcase || "admin"
+
+    @managers = User.where(role: "Manager")
+    @employees = User.where(role: "Employee")
+
+    
+
+    case @active_view
+    when "admin"
+      @tasks_to_show = Task.includes(:user).all
+    when "manager"
+      if params[:manager_id].present?
+        @active_manager = @managers.find(params[:manager_id])
+        @employees_to_show = @employees.where(manager_id: @active_manager.id)
+        @tasks_to_show = Task.joins(:user).where(users: { manager_id: @active_manager.id })
+      else
+        @tasks_to_show = Task.joins(:user).where(users: { manager_id: @managers.pluck(:id) })
+        @employees_to_show = @employees
+      end
+    when "employee"
+      if params[:employee_id].present?
+        @active_employee = @employees.find(params[:employee_id])
+        @tasks_to_show = Task.where(user_id: @active_employee.id).includes(:user, :manager)
+      else
+        @tasks_to_show = Task.includes(:user).where(user_id: @employees.pluck(:id))
+      end
+    end
+  end
+
+ def mark_complete
+    @task = Task.find(params[:id])
+    @task.update(status: "completed")
+
+    respond_to do |format|
+      format.html { redirect_back(fallback_location: dashboard_index_path) }
+      format.turbo_stream # will render mark_complete.turbo_stream.erb
+    end
+  end
+  def create_task
+    Task.create!(
+      title: task_params[:title],
+      description: task_params[:description],
+      user_id: task_params[:user_id],
+      assigned_date: task_params[:assigned_date],
+      due_date: task_params[:due_date],
+      status: "pending"
+    )
+    redirect_to dashboard_index_path(view: params[:view], manager_id: params[:manager_id])
+  end
+
+  def assign_manager
+  employee = User.find(params[:employee_id])
+  employee.update(manager_id: params[:manager_id])
+
+  redirect_to dashboard_index_path(view: "admin"), notice: "#{employee.name} assigned to manager successfully!"
 end
 
 
-require 'ostruct'
-class DashboardController < ApplicationController
-  # For demo purposes, we assume user is "logged in" as a role
-  # Replace with real authentication in production
-  before_action :set_current_user
-  before_action :load_shared_data
-
-  def index
-    @task ||= TaskForm.new
-    # Determine which dashboard to show
-    @active_view = params[:view]&.downcase || default_view
-
-    # Manager or Employee selection
-    if @active_view == "manager"
-      @active_manager = params[:manager_id].present? ? @managers.find { |m| m.id.to_s == params[:manager_id] } : nil
-      load_manager_tasks
-    elsif @active_view == "employee"
-      @active_employee = params[:employee_id].present? ? @employees.find { |e| e.id.to_s == params[:employee_id] } : nil
-      load_employee_tasks
-    else
-      load_admin_tasks
-    end
-
-    set_dashboard_label
-
-    # Ensure @task exists for form_with
-    @task ||= OpenStruct.new(title: "", user_id: nil)
-  end
-
   private
 
-  # === Demo "current user" ===
+  def task_params
+    params.require(:task).permit(:title, :description, :user_id, :assigned_date, :due_date)
+  end
+
   def set_current_user
-    @current_user ||= OpenStruct.new(id: 1, name: "Admin John", role: "Admin")
-  end
-
-  # === Dummy users and tasks for demo ===
-  def load_shared_data
-    @employees = [
-      OpenStruct.new(id: 1, name: "Employee Alice"),
-      OpenStruct.new(id: 2, name: "Employee Bob"),
-      OpenStruct.new(id: 3, name: "Employee Carol")
-    ]
-
-    @managers = [
-      OpenStruct.new(id: 1, name: "Manager John"),
-      OpenStruct.new(id: 2, name: "Manager Jane"),
-      OpenStruct.new(id: 3, name: "Manager Mike")
-    ]
-
-    @tasks = [
-      OpenStruct.new(title: "Prepare Report", user: @employees[0], manager_id: 1, status: "pending"),
-      OpenStruct.new(title: "Site Inspection", user: @employees[1], manager_id: 2, status: "completed"),
-      OpenStruct.new(title: "Client Meeting", user: @employees[2], manager_id: 1, status: "overdue")
-    ]
-
-    @ai_summary = "This is a demo AI summary of tasks for the team."
-  end
-
-  # Default view is Admin
-  def default_view
-    "admin"
-  end
-
-  # Labels for top of dashboard
-  def set_dashboard_label
-    @dashboard_label =
-      case @active_view
-      when "admin"
-        "Admin Dashboard"
-      when "manager"
-        if @active_manager
-          "Manager Dashboard (#{@active_manager.name})"
-        else
-          "Manager Dashboard (All Managers)"
-        end
-      when "employee"
-        if @active_employee
-          "Employee Dashboard (#{@active_employee.name})"
-        else
-          "Employee Dashboard (All Employees)"
-        end
-      else
-        "Dashboard"
-      end
-  end
-
-  # === Task loading ===
-  def load_admin_tasks
-    # Admin sees all tasks
-    @tasks_to_show = @tasks
-  end
-
-  def load_manager_tasks
-    # Filter by selected manager or show all
-    if @active_manager
-      @tasks_to_show = @tasks.select { |t| t.manager_id == @active_manager.id }
-    else
-      @tasks_to_show = @tasks
-    end
-  end
-
-  def load_employee_tasks
-    # Filter by selected employee or show all
-    if @active_employee
-      @tasks_to_show = @tasks.select { |t| t.user.id == @active_employee.id }
-    else
-      @tasks_to_show = @tasks
-    end
+    @current_user ||= User.find_by(role: "Admin") # fallback for demo
   end
 end
