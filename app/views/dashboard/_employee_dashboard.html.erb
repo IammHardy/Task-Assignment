@@ -1,0 +1,32 @@
+<!-- Employee Dashboard -->
+<div id="employee-dashboard">
+  <h2 class="text-2xl font-semibold mb-4 text-gray-700">My Tasks</h2>
+
+  <table class="w-full table-auto border-collapse border border-gray-300 mb-8">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="border px-4 py-2">Title</th>
+        <th class="border px-4 py-2">Status</th>
+        <th class="border px-4 py-2">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @tasks.where(user: @current_user).each do |task| %>
+        <tr class="<%= task.completed? ? 'bg-green-50' : '' %>">
+          <td class="border px-4 py-2"><%= task.title %></td>
+          <td class="border px-4 py-2"><%= task.completed? ? "Completed" : "Pending" %></td>
+          <td class="border px-4 py-2">
+            <% unless task.completed? %>
+              <%= button_to "Mark Complete", complete_task_path(task),
+                  method: :patch,
+                  form: { data: { turbo_stream: true } },
+                  class: "bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <p class="text-gray-600">You can only see your assigned tasks.</p>
+</div>

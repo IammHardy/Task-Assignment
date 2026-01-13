@@ -1,0 +1,72 @@
+<!-- Manager Dashboard Partial -->
+<div id="manager-dashboard">
+  <%# --- Stats Cards --- %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <%= render partial: "dashboard/task_stats", locals: { tasks: @tasks || [] } %>
+  </div>
+
+  <%# --- Tasks Table --- %>
+  <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+    <h2 class="text-2xl font-semibold mb-4 text-gray-700 flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M5 8h14M5 4h14v16H5V4z" />
+      </svg>
+      Tasks
+    </h2>
+    <turbo-frame id="tasks-table">
+      <table class="w-full table-auto border-collapse border border-gray-300">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="border px-4 py-2">Title</th>
+            <th class="border px-4 py-2">Employee</th>
+            <th class="border px-4 py-2">Status</th>
+            <th class="border px-4 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% (@tasks || []).each do |task| %>
+            <tr class="<%= task.completed? ? 'bg-green-50' : '' %>">
+              <td class="border px-4 py-2"><%= task.title %></td>
+              <td class="border px-4 py-2"><%= task.user&.name %></td>
+              <td class="border px-4 py-2"><%= task.completed? ? "Completed" : "Pending" %></td>
+              <td class="border px-4 py-2 space-x-2">
+                <% unless task.completed? %>
+                  <%= button_to "Mark Complete", complete_task_path(task),
+                      method: :patch,
+                      form: { data: { turbo_stream: true } },
+                      class: "bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700" %>
+                <% end %>
+                <%= link_to "Edit", edit_task_path(task),
+                      class: "bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </turbo-frame>
+  </div>
+
+  <%# --- Create Task Form (Visible to Manager) --- %>
+  <% if current_user.role == "Manager" %>
+    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700 flex items-center space-x-2">
+        Create Task
+      </h2>
+      <turbo-frame id="task-form">
+        <%= render "tasks/form", task: @task, employees: @employees || [] %>
+      </turbo-frame>
+      <turbo-frame id="task-msg"></turbo-frame>
+    </div>
+  <% end %>
+
+  <%# --- AI Team Summary --- %>
+  <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
+    <h2 class="text-2xl font-semibold mb-2 text-gray-700 flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m2 0h2a2 2 0 002-2V8a2 2 0 00-2-2h-4.586a1 1 0 00-.707.293l-1.414 1.414A1 1 0 0112.586 8H6a2 2 0 00-2 2v6a2 2 0 002 2h2" />
+      </svg>
+      AI Team Summary
+    </h2>
+    <p class="text-gray-700"><%= @ai_summary || "No summary available" %></p>
+  </div>
+</div>

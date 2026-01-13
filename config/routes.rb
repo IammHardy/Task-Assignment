@@ -11,6 +11,7 @@ resources :tasks, only: [:index, :create, :update, :edit, :destroy] do
   patch :complete, on: :member
 end
 
+post "/switch_user", to: "dashboard#switch_user"
 
 
 

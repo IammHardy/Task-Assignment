@@ -1,31 +1,56 @@
-# app/controllers/dashboard_controller.rb
 class DashboardController < ApplicationController
-  before_action :load_users_and_roles
-
+  # Index action
   def index
-    @task = Task.new
-    @employees = User.where(role: "Employee")
-    @tasks = Task.includes(:user).all
+    @active_view = params[:view]&.downcase || default_view
+    @active_manager = if @active_view == "manager" && params[:manager_id].present?
+                        User.find_by(id: params[:manager_id])
+                      else
+                        nil
+                      end
 
-    ai_service = AiWorkflowService.new(@tasks, User.where(role: "Manager"))
-    @ai_summary, @ai_suggestions = ai_service.progress_and_suggestions
-  end
+    load_dashboard_data
+    set_dashboard_label
 
-  def ai_refresh
-    @tasks = Task.includes(:user).all
-    ai_service = AiWorkflowService.new(@tasks, User.where(role: "Manager"))
-    @ai_summary, @ai_suggestions = ai_service.progress_and_suggestions
-
-    respond_to do |format|
-      format.turbo_stream { render turbo_stream: turbo_stream.replace("ai-suggestions", partial: "dashboard/ai_suggestions", locals: { suggestions: @ai_suggestions }) }
-      format.html { redirect_to dashboard_index_path, notice: "AI refreshed!" }
-    end
+    # Ensure @task is always a real Task object for the form
+    @task ||= Task.new
   end
 
   private
 
-  def load_users_and_roles
-    @managers = User.where(role: "Manager")
-    @employees_all = User.where(role: "Employee")
+  # This must be defined in the controller
+  def default_view
+    "admin" # make Admin the default dashboard
+  end
+
+  def load_dashboard_data
+    # Dummy data for demo
+    @managers  = User.where(role: "Manager") # or dummy OpenStructs
+    @employees = User.where(role: "Employee")
+    @industries = Industry.all
+
+    case @active_view
+    when "admin"
+      @tasks = Task.all
+    when "manager"
+      @tasks = Task.all
+    when "employee"
+      @tasks = Task.where(user_id: 1) # demo employee tasks
+    else
+      @tasks = Task.none
+    end
+  end
+
+  def set_dashboard_label
+    @dashboard_label =
+      case @active_view
+      when "admin"
+        "Admin Dashboard"
+      when "manager"
+        @active_manager ? "Manager Dashboard (#{@active_manager.name})" : "Manager Dashboard (All Managers)"
+      when "employee"
+        "Employee Dashboard"
+      else
+        "Dashboard"
+      end
   end
 end

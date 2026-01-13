@@ -1,135 +1,76 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-  <!-- Page Header -->
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-4h6v4m0 0v-4h2v4m-6 0H5v-4h2v4z" />
-      </svg>
-      Manager Dashboard
-    </h1>
-    <button id="toggle-dashboard" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
-      Switch Dashboard
-    </button>
-  </div>
-
-  <!-- Manager Dashboard -->
-  <div class="dashboard-section" id="manager-dashboard">
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      <%= render partial: "dashboard/task_stats", locals: { tasks: @tasks } %>
-    </div>
-
-    <!-- Tasks Table -->
-    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700 flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6M5 8h14M5 4h14v16H5V4z" />
-        </svg>
-        Tasks
-      </h2>
-      <turbo-frame id="tasks-table">
-        <%= render partial: "dashboard/tasks_table", locals: { tasks: @tasks } %>
-      </turbo-frame>
-    </div>
-
-    <!-- Create Task Form -->
-    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
-      <h2 class="text-2xl font-semibold mb-4 text-gray-700 flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Create Task
-      </h2>
-      <turbo-frame id="task-form">
-        <%= render "tasks/form", task: @task, employees: @employees %>
-      </turbo-frame>
-      <turbo-frame id="task-msg"></turbo-frame>
-    </div>
-
-    <!-- AI Team Summary -->
-    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
-      <h2 class="text-2xl font-semibold mb-2 text-gray-700 flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6m2 0h2a2 2 0 002-2V8a2 2 0 00-2-2h-4.586a1 1 0 00-.707.293l-1.414 1.414A1 1 0 0112.586 8H6a2 2 0 00-2 2v6a2 2 0 002 2h2" />
-        </svg>
-        AI Team Summary
-      </h2>
-      <p class="text-gray-700"><%= @ai_summary %></p>
-    </div>
-
-    <!-- AI Suggestions -->
-    <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200 hover:shadow-lg transition">
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-2xl font-semibold text-gray-700 flex items-center space-x-2">
-      <svg ...></svg>
-      AI Suggestions
-    </h2>
-    <button id="toggle-ai-suggestions" class="text-sm text-blue-600 hover:underline">Show/Hide</button>
-  </div>
-
-  <turbo-frame id="ai-suggestions">
-    <%= render "dashboard/ai_suggestions", suggestions: @ai_suggestions %>
-  </turbo-frame>
+<div class="mb-4 px-4 py-2 bg-gray-100 border rounded text-sm text-gray-700">
+  Currently viewing: <strong><%= @dashboard_label %></strong>
 </div>
 
-
-    <!-- Refresh AI Button -->
-    <div class="mb-8">
-      <%= button_to "Refresh AI",
-          ai_refresh_dashboard_index_path,
-          method: :post,
-          form: { data: { turbo_stream: true } },
-          class: "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition" %>
-    </div>
-
-  </div>
-
-  <!-- Employee Dashboard (Hidden) -->
-  <div class="dashboard-section hidden" id="employee-dashboard">
-    <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center space-x-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12 12 0 010 6.844L12 14z" />
-      </svg>
-      Employee Dashboard
-    </h2>
-    <p class="text-gray-700">This is an alternate dashboard view for employees. Customize as needed.</p>
-  </div>
-
+<!-- Dashboard Switch -->
+<div class="mb-4 p-3 border rounded flex space-x-2">
+  <%= link_to "Admin", dashboard_index_path(view: "admin"), class: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
+  <%= link_to "Manager", dashboard_index_path(view: "manager"), class: "px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700" %>
+  <%= link_to "Employee", dashboard_index_path(view: "employee"), class: "px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600" %>
 </div>
 
-<!-- JS for toggles & animations -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
+<!-- Manager Selection Dropdown -->
+<% if @active_view == "manager" %>
+  <div class="mb-4 p-3 border rounded flex space-x-2 items-center">
+    <label class="font-semibold">Select Manager:</label>
+    <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
+      <%= f.hidden_field :view, value: "manager" %>
+      <%= f.select :manager_id,
+            options_from_collection_for_select(@managers || [], :id, :name, params[:manager_id]),
+            { prompt: "All Managers" },
+            class: "border rounded px-2 py-1" %>
+      <%= f.submit "Switch", class: "bg-green-600 text-white px-3 py-1 rounded" %>
+    <% end %>
+  </div>
+<% end %>
 
-  // Dashboard toggle
-  const toggleBtn = document.getElementById("toggle-dashboard");
-  const managerSection = document.getElementById("manager-dashboard");
-  const employeeSection = document.getElementById("employee-dashboard");
+<!-- Tasks Table -->
+<div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
+  <h2 class="text-2xl font-semibold mb-4">Tasks</h2>
+  <table class="w-full table-auto border-collapse border border-gray-300">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="border px-4 py-2">Title</th>
+        <th class="border px-4 py-2">Employee</th>
+        <th class="border px-4 py-2">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (@tasks || []).each do |task| %>
+        <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.status == 'overdue' ? 'bg-red-50' : '' %>">
+          <td class="border px-4 py-2"><%= task.title %></td>
+          <td class="border px-4 py-2"><%= task.user&.name || "N/A" %></td>
+          <td class="border px-4 py-2"><%= task.status&.capitalize || "Pending" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
 
-  toggleBtn.addEventListener("click", () => {
-    managerSection.classList.toggle("hidden");
-    employeeSection.classList.toggle("hidden");
-  });
+<!-- Create Task Form (Admin & Manager) -->
+<% if @active_view.in?(["admin", "manager"]) %>
+  <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
+    <h2 class="text-2xl font-semibold mb-4">Create Task</h2>
+   <%= form_with model: @task, url: "#", local: true do |f| %>
+      <div class="mb-2">
+        <%= f.label :title %>
+        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <div class="mb-2">
+        <%= f.label :assign_to, "Assign to Employee" %>
+        <%= f.select :user_id, options_from_collection_for_select(@employees || [], :id, :name), { prompt: "Select Employee" }, class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <div class="mb-2">
+        <%= f.label :status %>
+        <%= f.select :status, [["Pending", "pending"], ["Completed", "completed"]], class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+    <% end %>
+  </div>
+<% end %>
 
-  // AI Suggestions toggle
-  const aiToggleBtn = document.getElementById("toggle-ai-suggestions");
-  const aiSection = document.getElementById("ai-suggestions");
-
-  aiToggleBtn.addEventListener("click", () => {
-    aiSection.classList.toggle("hidden");
-  });
-
-  // Animate progress bars
-  document.querySelectorAll(".animate-fill").forEach(bar => {
-    const width = bar.dataset.width;
-    setTimeout(() => {
-      bar.style.width = width + "%";
-      bar.classList.add("transition-all", "duration-1000", "ease-out");
-    }, 100);
-  });
-
-});
-</script>
+<!-- AI Team Summary -->
+<div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
+  <h2 class="text-2xl font-semibold mb-2">AI Team Summary</h2>
+  <p><%= @ai_summary || "No AI summary available yet." %></p>
+</div>

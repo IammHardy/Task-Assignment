@@ -1,8 +1,10 @@
-<!-- app/views/dashboard/_task_stats.html.erb -->
-<% total = tasks.count %>
-<% pending = tasks.select { |t| t.status == "pending" }.count %>
-<% completed = tasks.select { |t| t.status == "completed" }.count %>
-<% overdue = tasks.select { |t| t.status == "overdue" }.count %>
+<% tasks ||= [] %>
+
+<% total = tasks.size %>
+<% pending = tasks.count { |t| t.status == "pending" } %>
+<% completed = tasks.count { |t| t.status == "completed" } %>
+<% overdue = tasks.count { |t| t.status == "overdue" } %>
+
 
 <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition w-full flex items-center space-x-2">
   <h3 class="text-gray-500 font-semibold">Total Tasks</h3>

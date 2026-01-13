@@ -50,12 +50,15 @@ class TasksController < ApplicationController
 
   # PATCH /tasks/:id/complete
   def complete
-    @task.update(status: "completed")
-    respond_to do |format|
-      format.turbo_stream
-      format.html { redirect_to dashboard_index_path, notice: "Task marked complete!" }
-    end
+  @task = Task.find(params[:id])
+  @task.update(completed: true)
+
+  respond_to do |format|
+    format.turbo_stream { render turbo_stream: turbo_stream.replace("tasks-table", partial: "dashboard/tasks_table", locals: { tasks: Task.all }) }
+    format.html { redirect_to dashboard_index_path, notice: "Task marked as complete" }
   end
+end
+
 
   private
 

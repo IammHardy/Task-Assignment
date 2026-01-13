@@ -1,0 +1,64 @@
+<% if current_user.role == "Admin" && @active_view == "manager" %>
+  <div class="mb-4 p-3 border rounded bg-blue-50">
+    Viewing Manager:
+    <strong>
+      <%= @active_manager ? @active_manager.name : "All Managers" %>
+    </strong>
+  </div>
+<% end %>
+
+
+
+  <!-- Admin Dashboard Section -->
+  <div id="admin-dashboard" class="dashboard-section <%= 'hidden' if @active_view != 'admin' %>">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center space-x-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-4h6v4m0 0v-4h2v4m-6 0H5v-4h2v4z" />
+      </svg>
+      Admin Dashboard
+    </h2>
+
+    <!-- Manager Selector (only when viewing Manager dashboard) -->
+    <% if @active_view == "manager" %>
+      <div class="mb-4 flex items-center space-x-2">
+        <label for="manager-select" class="font-semibold">Select Manager:</label>
+        <%= form_with url: dashboard_index_path, method: :get, local: true do |f| %>
+          <%= f.hidden_field :view, value: "manager" %>
+          <%= f.select :manager_id, 
+                options_from_collection_for_select(@managers, :id, :name, params[:manager_id]), 
+                { prompt: "All Managers" },
+                class: "border rounded px-3 py-2" %>
+          <%= f.submit "Filter", class: "bg-green-600 text-white px-3 py-2 rounded ml-2" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <!-- Industry Selector -->
+    <div class="mb-6 flex items-center space-x-4 bg-gray-100 p-4 rounded border">
+      <label for="industry-select" class="font-semibold text-gray-700">Select Industry:</label>
+      <%= form_with url: dashboard_index_path, method: :get, local: true do |f| %>
+        <%= f.hidden_field :view, value: @active_view %>
+        <%= f.select :industry_id, 
+              options_from_collection_for_select(@industries, :id, :name, params[:industry_id]), 
+              { prompt: "All Industries" },
+              class: "border rounded px-3 py-2" %>
+        <%= f.submit "Filter", class: "bg-blue-600 text-white px-3 py-2 rounded ml-2" %>
+      <% end %>
+    </div>
+
+    <% if @selected_industry %>
+      <p class="text-gray-600 mb-4">
+        Showing tasks for <strong><%= @selected_industry.name %></strong> industry.
+      </p>
+    <% end %>
+
+    <% if @active_view == "manager" && @selected_manager %>
+      <p class="text-gray-600 mb-4">
+        Viewing tasks for Manager: <strong><%= @selected_manager.name %></strong>
+      </p>
+    <% end %>
+
+    <!-- Render the Manager Dashboard partial -->
+    <%= render "dashboard/manager_dashboard", tasks: @tasks %>
+  </div>
+<% end %>

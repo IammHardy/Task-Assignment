@@ -18,7 +18,8 @@
     <%= link_to "Edit", "#", class: "bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs cursor-not-allowed" %>
     <%= link_to "Delete", task_path(task), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" %>
     <% unless task.status == "completed" %>
-      <%= link_to "Mark Complete", complete_task_path(task), method: :patch, class: "bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs" %>
+      <%= button_to "Mark as Complete", complete_task_path(task), method: :patch, class: "bg-green-500 text-white px-2 py-1 rounded" %>
+
     <% end %>
   </td>
 </tr>
