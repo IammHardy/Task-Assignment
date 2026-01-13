@@ -1,18 +1,44 @@
 <!-- app/views/dashboard/_tasks_table.html.erb -->
 <div class="overflow-x-auto">
-  <table class="min-w-full bg-white border border-gray-200 rounded-lg">
-    <thead class="bg-gray-50">
+  <!-- Tasks Table -->
+<div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
+  <h2 class="text-2xl font-semibold mb-4">Tasks</h2>
+  <table class="w-full table-auto border-collapse border border-gray-300">
+    <thead class="bg-gray-100">
       <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        <th class="border px-4 py-2">Title</th>
+        <th class="border px-4 py-2">Employee</th>
+        <th class="border px-4 py-2">Status</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-200">
-      <%= render partial: "tasks/task", collection: tasks, as: :task %>
+    <tbody>
+      <% @tasks_to_show.each do |task| %>
+        <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.status == 'overdue' ? 'bg-red-50' : '' %>">
+          <td class="border px-4 py-2"><%= task.title %></td>
+          <td class="border px-4 py-2"><%= task.user.name %></td>
+          <td class="border px-4 py-2"><%= task.status.capitalize %></td>
+        </tr>
+      <% end %>
     </tbody>
   </table>
+</div>
+
+<!-- Create Task Form -->
+<% if @active_view.in?(["admin", "manager"]) %>
+  <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
+    <h2 class="text-2xl font-semibold mb-4">Create Task</h2>
+    <%= form_with model: @task || OpenStruct.new(title: "", user_id: nil), url: "#", local: true do |f| %>
+      <div class="mb-2">
+        <%= f.label :title %>
+        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <div class="mb-2">
+        <%= f.label :assign_to, "Assign to Employee" %>
+        <%= f.select :user_id, options_from_collection_for_select(@employees, :id, :name), { prompt: "Select Employee" }, class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+    <% end %>
+  </div>
+<% end %>
+
 </div>
