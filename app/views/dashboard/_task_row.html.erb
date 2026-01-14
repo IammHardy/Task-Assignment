@@ -14,12 +14,35 @@
     </span>
   </td>
   <td class="px-6 py-4 text-gray-700"><%= task.due_date&.strftime("%b %d, %Y") || "N/A" %></td>
-  <td class="px-6 py-4 flex space-x-2">
+ <td class="px-6 py-4 flex space-x-2">
+
+  <%# Employee view: Mark Complete button only for their tasks %>
+  <% if @active_view == "employee" && task.user_id == @active_employee&.id && task.status != "completed" %>
+    <%= button_to "Mark Complete",
+          mark_complete_dashboard_index_path(
+            id: task.id,
+            view: "employee",
+            employee_id: @active_employee.id
+          ),
+          method: :patch,
+          class: "bg-green-500 text-white px-2 py-1 rounded text-xs" %>
+  <% end %>
+
+  <%# Admin/Manager view: Edit / Delete / Update buttons %>
+  <% if @active_view.in?(["admin", "manager"]) %>
     <%= link_to "Edit", "#", class: "bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs cursor-not-allowed" %>
     <%= link_to "Delete", task_path(task), method: :delete, data: { confirm: "Are you sure?" }, class: "bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" %>
-    <% unless task.status == "completed" %>
-      <%= button_to "Mark as Complete", complete_task_path(task), method: :patch, class: "bg-green-500 text-white px-2 py-1 rounded" %>
-
+    <%= form_with model: task,
+                  url: update_task_dashboard_index_path(task),
+                  method: :patch,
+                  class: "flex gap-2 items-center" do |f| %>
+      <%= f.select :user_id, options_from_collection_for_select(@employees, :id, :name, task.user_id) %>
+      <%= f.select :status, Task.statuses.keys.map { |s| [s.humanize, s] }, selected: task.status %>
+      <%= f.date_field :due_date, value: task.due_date %>
+      <%= f.submit "Update", class: "bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs" %>
     <% end %>
-  </td>
+  <% end %>
+
+</td>
+
 </tr>

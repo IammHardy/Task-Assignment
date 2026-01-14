@@ -1,13 +1,20 @@
 Rails.application.routes.draw do
   # Dashboard
-  resources :dashboard, only: [:index] do
-    collection do
-      post :create_task       # create task for admin/manager
-      patch :mark_complete    # employee marks task complete
-      post :ai_refresh        # your AI refresh route
-      post :assign_manager    # assign manager to employee
-    end
+resources :dashboard, only: [:index] do
+  collection do
+    patch :mark_complete    # employee marking task complete
+    post  :create_task
+    post  :assign_manager
   end
+  member do
+    patch :update_task      # updating a task for admin/manager
+  end
+end
+
+
+
+  get 'employee_dashboard', to: 'employee_dashboard#index'
+
 
   # Tasks (optional, if needed elsewhere)
   resources :tasks, only: [:index, :create, :update, :edit, :destroy] do

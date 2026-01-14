@@ -1,16 +1,26 @@
 class Task < ApplicationRecord
   belongs_to :user
   belongs_to :manager, class_name: "User", optional: true
-
+   before_save :mark_overdue
   validates :title, :status, :due_date, presence: true
 
   enum :status, {
     pending: "pending",
     in_progress: "in_progress",
-    completed: "completed"
+    completed: "completed",
+     overdue: "overdue"
   }
 
   after_update_commit :broadcast_stats
+
+ 
+
+def mark_overdue
+  if due_date.present? && due_date < Date.today && status != "completed"
+    self.status = "overdue"
+  end
+end
+
 
 private
 

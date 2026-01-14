@@ -1,66 +1,69 @@
-<!-- app/views/dashboard/_tasks_table.html.erb -->
+<%# app/views/dashboard/_tasks_table.html.erb %>
 
-<turbo-frame id="tasks_table">
-<div class="overflow-x-auto">
-  <!-- Tasks Table -->
-<div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
-  <h2 class="text-2xl font-semibold mb-4">Tasks</h2>
+<%# Ensure locals are defined to prevent NameError %>
+<% tasks_to_show ||= [] %>
+<% employees ||= [] %>
+<% active_view ||= "admin" %>
+<% active_employee ||= nil %>
+
+<table class="w-full table-auto border-collapse border border-gray-300">
   <thead class="bg-gray-100">
-  <tr>
-    <th class="border px-4 py-2">Title</th>
-    <th class="border px-4 py-2">Employee</th>
-    <th class="border px-4 py-2">Status</th>
-    <th class="border px-4 py-2">Manager</th>
-    <% if @active_view == "employee" %>
+    <tr>
+      <th class="border px-4 py-2">Title</th>
+      <th class="border px-4 py-2">Employee</th>
+      <th class="border px-4 py-2">Manager</th>
+      <th class="border px-4 py-2">Status</th>
+      <th class="border px-4 py-2">Due Date</th>
       <th class="border px-4 py-2">Actions</th>
-    <% end %>
-  </tr>
-</thead>
+    </tr>
+  </thead>
+  <tbody>
+    <% if tasks_to_show.any? %>
+      <% tasks_to_show.each do |task| %>
+        <%= turbo_frame_tag "task_#{task.id}" do %>
+          <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.due_date && task.due_date < Date.today ? 'bg-red-50' : '' %>">
+            <td class="border px-4 py-2"><%= task.title.presence || "Untitled Task" %></td>
+            <td class="border px-4 py-2"><%= task.user&.name || "Unassigned" %></td>
+            <td class="border px-4 py-2"><%= task.user&.manager&.name || "Unassigned" %></td>
+            <td class="border px-4 py-2"><%= task.status.humanize %></td>
+            <td class="border px-4 py-2"><%= task.due_date&.strftime("%b %d, %Y") || "N/A" %></td>
+            <td class="border px-4 py-2 space-x-2">
 
-<tbody>
-  <% @tasks_to_show.each do |task| %>
-    <%= turbo_frame_tag "task_#{task.id}" do %>
-      <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.status == 'overdue' ? 'bg-red-50' : '' %>">
-        <td class="border px-4 py-2"><%= task.title %></td>
-        <td class="border px-4 py-2"><%= task.user.name %></td>
-        <td class="border px-4 py-2"><%= task.status.capitalize %></td>
-        <td class="border px-4 py-2"><%= task.user.manager&.name || "Unassigned" %></td>
-        <td class="border px-4 py-2">
-          <% if @active_view == "employee" && task.status != "completed" %>
-            <%= button_to "Mark Complete",
-                  mark_complete_dashboard_index_path(id: task.id),
-                  method: :patch,
-                  form: { data: { turbo_frame: "task_#{task.id}" } },
-                  class: "bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded" %>
-          <% elsif task.status == "completed" %>
-            <span class="text-green-700 font-semibold">Completed</span>
-          <% end %>
-        </td>
+              <%# --- Employee view: Mark Complete button --- %>
+              <% if active_view == "employee" && task.user_id == active_employee&.id && task.status != "completed" %>
+                <%= button_to "Mark Complete",
+      mark_complete_dashboard_index_path(id: task.id, view: "employee", employee_id: active_employee.id),
+      method: :patch,
+      class: "bg-green-500 text-white px-2 py-1 rounded text-xs",
+      form: { data: { turbo_frame: "task_#{task.id}" } } %>
+
+                <% end %>
+
+
+
+              <%# --- Admin/Manager view: Update task form --- %>
+              <% if active_view.in?(["admin", "manager"]) %>
+                <%= form_with model: task,
+                      url: update_task_dashboard_path(task),
+                      method: :patch,
+                      local: true,
+                      class: "flex gap-2 items-center" do |f| %>
+
+                  <%= f.select :user_id, options_from_collection_for_select(employees, :id, :name, task.user_id) %>
+                  <%= f.select :status, Task.statuses.keys.map { |s| [s.humanize, s] }, selected: task.status %>
+                  <%= f.date_field :due_date, value: task.due_date %>
+                  <%= f.submit "Update", class: "bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs" %>
+                <% end %>
+              <% end %>
+
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    <% else %>
+      <tr>
+        <td colspan="6" class="border px-4 py-2 text-center text-gray-500">No tasks found.</td>
       </tr>
     <% end %>
-  <% end %>
-</tbody>
-
-
-</div>
-
-<!-- Create Task Form -->
-<% if @active_view.in?(["admin", "manager"]) %>
-  <div class="mb-8 bg-white shadow rounded-lg p-6 border border-gray-200">
-    <h2 class="text-2xl font-semibold mb-4">Create Task</h2>
-    <%= form_with model: @task || OpenStruct.new(title: "", user_id: nil), url: "#", local: true do |f| %>
-      <div class="mb-2">
-        <%= f.label :title %>
-        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
-      </div>
-      <div class="mb-2">
-        <%= f.label :assign_to, "Assign to Employee" %>
-        <%= f.select :user_id, options_from_collection_for_select(@employees, :id, :name), { prompt: "Select Employee" }, class: "border rounded px-2 py-1 w-full" %>
-      </div>
-      <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
-    <% end %>
-  </div>
-<% end %>
-
-</div>
-</turbo-frame>
+  </tbody>
+</table>

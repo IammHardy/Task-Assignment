@@ -1,14 +1,17 @@
 class EmployeeDashboardController < ApplicationController
   before_action :set_employee
 
-  def index
-    @tasks = @employee.tasks.order(due_date: :asc)
-  end
+ # EmployeeDashboardController
+def index
+  @tasks_to_show = Task.where(user_id: current_user.id)
+  @current_user = current_user
+end
+
 
   private
 
   def set_employee
-    # For demo, pick the first employee (or use session[:user_id] in full app)
+    # For demo, pick the first employee
     @employee = User.find_by(role: "Employee")
   end
 end
