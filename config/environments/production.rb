@@ -92,5 +92,6 @@ Rails.application.configure do
   config.public_file_server.enabled = true
 config.assets.compile = false
 config.assets.digest = true
+config.action_cable.mount_path = nil
 
 end
