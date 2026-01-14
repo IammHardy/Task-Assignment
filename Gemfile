@@ -64,7 +64,7 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem 'rails_12factor', group: :production
+# gem 'rails_12factor', group: :production
 
 
 gem "cssbundling-rails", "~> 1.4"
