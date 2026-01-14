@@ -1,6 +1,7 @@
 class DashboardController < ApplicationController
   before_action :set_current_user
   before_action :set_active_employee, only: [:index, :mark_complete]
+  before_action :set_active_manager, only: [:index]
 
   # ------------------- DASHBOARD -------------------
   def index
@@ -41,7 +42,7 @@ class DashboardController < ApplicationController
             tasks_to_show: @active_employee.tasks.includes(:user),
             active_view: "employee",
             active_employee: @active_employee,
-            employees: @employees # for forms in table
+            employees: @employees
           }
         )
       end
@@ -56,7 +57,7 @@ class DashboardController < ApplicationController
     end
 
     respond_to do |format|
-      format.html { redirect_to dashboard_index_path(view: @active_view), notice: "Task updated!" }
+      format.html { redirect_to dashboard_index_path(view: @active_view, manager_id: params[:manager_id], employee_id: params[:employee_id]), notice: "Task updated!" }
 
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace(
@@ -105,14 +106,29 @@ class DashboardController < ApplicationController
                        end
   end
 
+  # Active manager for manager view
+  def set_active_manager
+    return unless params[:view] == "manager"
+
+    @managers = User.where(role: "Manager")
+    @active_manager = if params[:manager_id].present?
+                        @managers.find(params[:manager_id])
+                      else
+                        nil
+                      end
+  end
+
   # Tasks depending on view
   def tasks_for_active_view
     case @active_view
     when "admin"
       Task.includes(:user).all
     when "manager"
-      manager_id = params[:manager_id] || @current_user.id
-      Task.joins(:user).where(users: { manager_id: manager_id })
+      if @active_manager
+        Task.joins(:user).where(users: { manager_id: @active_manager.id })
+      else
+        Task.joins(:user).where(users: { manager_id: @managers.pluck(:id) })
+      end
     when "employee"
       @active_employee.tasks.includes(:user)
     else

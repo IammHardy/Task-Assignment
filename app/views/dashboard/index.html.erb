@@ -4,36 +4,56 @@
   <%= link_to "Employee", dashboard_index_path(view: "employee"), class: "px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600" %>
 </div>
 
-
+<!-- ADMIN VIEW -->
 <% if @active_view == "admin" %>
   <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Tasks (Admin)</h2>
-
   <%= render "dashboard/tasks_table",
              tasks_to_show: @tasks_to_show,
              active_view: "admin",
              current_user: @current_user %>
 
-<!-- Manager Dropdown -->
-<% if @active_view == "manager" %>
-  <div class="mb-4 p-3 border rounded flex space-x-2 items-center">
+<!-- MANAGER VIEW -->
+<% elsif @active_view == "manager" %>
+  <div class="mb-4 p-3 border rounded flex items-center space-x-4">
     <label class="font-semibold">Select Manager:</label>
-    <%= form_with url: dashboard_index_path, method: :get, local: true do |f| %>
+    <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
       <%= f.hidden_field :view, value: "manager" %>
-      <%= f.select :manager_id, options_from_collection_for_select(@managers, :id, :name, params[:manager_id]), { prompt: "All Managers" } %>
+      <%= f.select :manager_id, options_from_collection_for_select(@managers, :id, :name, @active_manager&.id), prompt: "All Managers", class: "border rounded px-2 py-1" %>
       <%= f.submit "Switch", class: "bg-green-600 text-white px-3 py-1 rounded" %>
     <% end %>
   </div>
-<% end %>
 
+  <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+    Tasks for <%= @active_manager&.name || "All Managers" %>
+  </h2>
 
+  <%= render "dashboard/tasks_table",
+             tasks_to_show: @tasks_to_show,
+             active_view: "manager",
+             current_user: @current_user,
+             employees: @employees %>
+
+<!-- EMPLOYEE VIEW -->
 <% elsif @active_view == "employee" %>
-  <h2 class="text-2xl font-semibold mb-4 text-gray-700">My Tasks</h2>
+  <div class="mb-4 p-3 border rounded flex items-center space-x-4">
+    <label class="font-semibold">Select Employee:</label>
+    <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
+      <%= f.hidden_field :view, value: "employee" %>
+      <%= f.select :employee_id, options_from_collection_for_select(@employees, :id, :name, @active_employee&.id), prompt: "Select Employee", class: "border rounded px-2 py-1" %>
+      <%= f.submit "Switch", class: "bg-yellow-500 text-white px-3 py-1 rounded" %>
+    <% end %>
+  </div>
+
+  <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+    Tasks for <%= @active_employee&.name || "Employee" %>
+  </h2>
 
   <%= render "dashboard/tasks_table",
              tasks_to_show: @tasks_to_show,
              active_view: "employee",
              active_employee: @active_employee,
-             current_user: @current_user %>
+             current_user: @current_user,
+             employees: @employees %>
 <% end %>
 
 <div id="ai_summary_frame">
