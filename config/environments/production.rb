@@ -90,7 +90,7 @@ Rails.application.configure do
   
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 config.active_job.queue_adapter = :async
-config.action_cable.adapter = :async
+
 
   config.public_file_server.enabled = true
 config.assets.compile = false
