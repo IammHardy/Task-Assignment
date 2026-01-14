@@ -1,16 +1,12 @@
 class DashboardController < ApplicationController
   before_action :set_current_user
+  before_action :set_active_view_and_users
   before_action :set_active_employee, only: [:index, :mark_complete]
   before_action :set_active_manager, only: [:index]
 
   # ------------------- DASHBOARD -------------------
   def index
-    @active_view = params[:view]&.downcase || "admin"
-
-    @managers = User.where(role: "Manager")
-    @employees = User.where(role: "Employee")
-
-    # Set tasks for view
+    # Set tasks for the current view
     @tasks_to_show = tasks_for_active_view
 
     # AI summary only for admin/manager
@@ -19,21 +15,32 @@ class DashboardController < ApplicationController
 
   # ------------------- TASK CREATION -------------------
   def create_task
-    Task.create!(task_params)
-    broadcast_ai_summary
-    redirect_to dashboard_index_path(view: params[:view], manager_id: params[:manager_id])
+  task = Task.new(task_params)
+  task.status ||= "pending" # default status
+
+  # Restrict manager assigning outside their team
+  if @current_user.role == "Manager"
+    allowed_employee_ids = @employees.where(manager_id: @current_user.id).pluck(:id)
+    unless allowed_employee_ids.include?(task.user_id)
+      redirect_to dashboard_index_path(view: "manager", manager_id: @current_user.id),
+                  alert: "Cannot assign task to this employee"
+      return
+    end
   end
+
+  task.save!
+  broadcast_ai_summary  # now just updates @ai_summary for redirect
+  redirect_to dashboard_index_path(view: params[:view], manager_id: params[:manager_id], employee_id: params[:employee_id])
+end
+
 
   # ------------------- MARK COMPLETE -------------------
   def mark_complete
     task = Task.find(params[:id])
-    if task.user == @active_employee
-      task.update!(status: "completed")
-    end
+    task.update!(status: "completed") if task.user == @active_employee
 
     respond_to do |format|
       format.html { redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee.id) }
-
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace(
           "tasks-table",
@@ -52,13 +59,10 @@ class DashboardController < ApplicationController
   # ------------------- UPDATE TASK -------------------
   def update_task
     task = Task.find(params[:id])
-    if @current_user.role.in?(["Manager", "Admin"])
-      task.update!(task_params)
-    end
+    task.update!(task_params) if @current_user.role.in?(%w[Manager Admin])
 
     respond_to do |format|
       format.html { redirect_to dashboard_index_path(view: @active_view, manager_id: params[:manager_id], employee_id: params[:employee_id]), notice: "Task updated!" }
-
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace(
           "tasks-table",
@@ -84,38 +88,27 @@ class DashboardController < ApplicationController
   # ------------------- HELPERS -------------------
   private
 
-  # Strong params
-  def task_params
-    params.require(:task).permit(:title, :description, :user_id, :assigned_date, :due_date, :status)
-  end
-
-  # Current user (fallback to Admin for demo)
   def set_current_user
     @current_user ||= User.find_by(role: "Admin")
   end
 
-  # Active employee for employee view or mark_complete
-  def set_active_employee
-    return unless params[:view] == "employee" || action_name == "mark_complete"
-
+  # Set active view and preload users
+  def set_active_view_and_users
+    @active_view = params[:view]&.downcase || "admin"
+    @managers = User.where(role: "Manager")
     @employees = User.where(role: "Employee")
-    @active_employee = if params[:employee_id].present?
-                         @employees.find(params[:employee_id])
-                       else
-                         @employees.first
-                       end
   end
 
-  # Active manager for manager view
-  def set_active_manager
-    return unless params[:view] == "manager"
+  # Set active employee for employee view or mark_complete
+  def set_active_employee
+    return unless @active_view == "employee" || action_name == "mark_complete"
+    @active_employee = params[:employee_id].present? ? @employees.find(params[:employee_id]) : @employees.first
+  end
 
-    @managers = User.where(role: "Manager")
-    @active_manager = if params[:manager_id].present?
-                        @managers.find(params[:manager_id])
-                      else
-                        nil
-                      end
+  # Set active manager for manager view
+  def set_active_manager
+    return unless @active_view == "manager"
+    @active_manager = params[:manager_id].present? ? @managers.find(params[:manager_id]) : nil
   end
 
   # Tasks depending on view
@@ -136,17 +129,20 @@ class DashboardController < ApplicationController
     end
   end
 
+  # Broadcast AI summary
   # Broadcast AI summary (optional)
-  def broadcast_ai_summary
-    tasks = tasks_for_active_view
-    ai_summary_text = generate_ai_summary(tasks)
-    turbo_stream_action_tag :replace,
-                            target: "ai_summary_frame",
-                            partial: "dashboard/ai_summary",
-                            locals: { ai_summary: ai_summary_text }
+def broadcast_ai_summary
+  # Only used if you plan to render Turbo Stream later
+  # If you just redirect after task creation, you can remove this method
+  @tasks = tasks_for_active_view
+  @ai_summary = generate_ai_summary(@tasks)
+end
+
+
+  def task_params
+    params.require(:task).permit(:title, :description, :user_id, :assigned_date, :due_date, :status)
   end
 
-  # AI summary generator
   def generate_ai_summary(tasks)
     return "No tasks yet." if tasks.empty?
 

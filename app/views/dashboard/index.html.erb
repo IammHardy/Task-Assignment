@@ -4,16 +4,46 @@
   <%= link_to "Employee", dashboard_index_path(view: "employee"), class: "px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600" %>
 </div>
 
-<!-- ADMIN VIEW -->
-<% if @active_view == "admin" %>
-  <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Tasks (Admin)</h2>
-  <%= render "dashboard/tasks_table",
-             tasks_to_show: @tasks_to_show,
-             active_view: "admin",
-             current_user: @current_user %>
+<%# ------------------- ADMIN & MANAGER CREATE TASK FORM ------------------- %>
+<% if @active_view.in?(%w[admin manager]) %>
+  <div class="mb-6 p-4 border rounded bg-gray-50">
+    <h3 class="text-lg font-semibold mb-2">Create New Task</h3>
 
-<!-- MANAGER VIEW -->
-<% elsif @active_view == "manager" %>
+    <%= form_with url: create_task_dashboard_index_path, scope: :task, local: true do |f| %>
+  <%= f.hidden_field :view, value: @active_view %>
+  <%= f.hidden_field :manager_id, value: @active_manager&.id if @active_view == "manager" %>
+
+  <div class="mb-2">
+    <%= f.label :title, class: "block font-medium" %>
+    <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
+  <div class="mb-2">
+    <%= f.label :description, class: "block font-medium" %>
+    <%= f.text_area :description, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
+  <div class="mb-2">
+    <%= f.label :user_id, "Assign to Employee", class: "block font-medium" %>
+    <% employees_for_assignment = @active_view == "manager" && @active_manager ? @employees.where(manager_id: @active_manager.id) : @employees %>
+    <%= f.select :user_id, options_from_collection_for_select(employees_for_assignment, :id, :name), prompt: "Select Employee", class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
+  <div class="mb-2">
+    <%= f.label :due_date, class: "block font-medium" %>
+    <%= f.date_field :due_date, class: "border rounded px-2 py-1 w-full" %>
+  </div>
+
+  <div>
+    <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+  </div>
+<% end %>
+
+  </div>
+<% end %>
+
+<%# ------------------- MANAGER SELECTION DROPDOWN ------------------- %>
+<% if @active_view == "manager" %>
   <div class="mb-4 p-3 border rounded flex items-center space-x-4">
     <label class="font-semibold">Select Manager:</label>
     <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
@@ -22,19 +52,10 @@
       <%= f.submit "Switch", class: "bg-green-600 text-white px-3 py-1 rounded" %>
     <% end %>
   </div>
+<% end %>
 
-  <h2 class="text-2xl font-semibold mb-4 text-gray-700">
-    Tasks for <%= @active_manager&.name || "All Managers" %>
-  </h2>
-
-  <%= render "dashboard/tasks_table",
-             tasks_to_show: @tasks_to_show,
-             active_view: "manager",
-             current_user: @current_user,
-             employees: @employees %>
-
-<!-- EMPLOYEE VIEW -->
-<% elsif @active_view == "employee" %>
+<%# ------------------- EMPLOYEE SELECTION DROPDOWN ------------------- %>
+<% if @active_view == "employee" %>
   <div class="mb-4 p-3 border rounded flex items-center space-x-4">
     <label class="font-semibold">Select Employee:</label>
     <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
@@ -43,19 +64,29 @@
       <%= f.submit "Switch", class: "bg-yellow-500 text-white px-3 py-1 rounded" %>
     <% end %>
   </div>
+<% end %>
 
+<%# ------------------- TASK TABLE ------------------- %>
+<% if @active_view == "admin" %>
+  <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Tasks (Admin)</h2>
+<% elsif @active_view == "manager" %>
+  <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+    Tasks for <%= @active_manager&.name || "All Managers" %>
+  </h2>
+<% elsif @active_view == "employee" %>
   <h2 class="text-2xl font-semibold mb-4 text-gray-700">
     Tasks for <%= @active_employee&.name || "Employee" %>
   </h2>
-
-  <%= render "dashboard/tasks_table",
-             tasks_to_show: @tasks_to_show,
-             active_view: "employee",
-             active_employee: @active_employee,
-             current_user: @current_user,
-             employees: @employees %>
 <% end %>
 
+<%= render "dashboard/tasks_table",
+           tasks_to_show: @tasks_to_show,
+           active_view: @active_view,
+           current_user: @current_user,
+           active_employee: @active_employee,
+           employees: @employees %>
+
+<%# ------------------- AI SUMMARY ------------------- %>
 <div id="ai_summary_frame">
   <%= @ai_summary if defined?(@ai_summary) %>
 </div>
