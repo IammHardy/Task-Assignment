@@ -1,6 +1,18 @@
 # db/seeds.rb
 
 # -----------------------------
+# Create Industries
+# -----------------------------
+industries = %w[law medical services]
+
+industry_records = industries.map do |name|
+  Industry.find_or_create_by!(name: name)
+end
+
+# make it easy to reference by name
+industry_hash = industry_records.index_by(&:name)
+
+# -----------------------------
 # Keep old users
 # -----------------------------
 User.find_or_create_by!(email: "manager@example.com") do |u|
@@ -24,19 +36,19 @@ end
 manager_law = User.find_or_create_by!(email: "law_manager@example.com") do |u|
   u.name = "Law Manager"
   u.role = "Manager"
-  u.industry = "law"
+  u.industry = industry_hash["law"]
 end
 
 manager_med = User.find_or_create_by!(email: "medical_manager@example.com") do |u|
   u.name = "Medical Manager"
   u.role = "Manager"
-  u.industry = "medical"
+  u.industry = industry_hash["medical"]
 end
 
 manager_serv = User.find_or_create_by!(email: "services_manager@example.com") do |u|
   u.name = "Services Manager"
   u.role = "Manager"
-  u.industry = "services"
+  u.industry = industry_hash["services"]
 end
 
 # -----------------------------
@@ -45,37 +57,37 @@ end
 law_emp1 = User.find_or_create_by!(email: "law_emp1@example.com") do |u|
   u.name = "Law Employee 1"
   u.role = "Employee"
-  u.manager_id = manager_law.id if u.respond_to?(:manager_id)
+  u.manager = manager_law
 end
 
 law_emp2 = User.find_or_create_by!(email: "law_emp2@example.com") do |u|
   u.name = "Law Employee 2"
   u.role = "Employee"
-  u.manager_id = manager_law.id if u.respond_to?(:manager_id)
+  u.manager = manager_law
 end
 
 med_emp1 = User.find_or_create_by!(email: "med_emp1@example.com") do |u|
   u.name = "Med Employee 1"
   u.role = "Employee"
-  u.manager_id = manager_med.id if u.respond_to?(:manager_id)
+  u.manager = manager_med
 end
 
 med_emp2 = User.find_or_create_by!(email: "med_emp2@example.com") do |u|
   u.name = "Med Employee 2"
   u.role = "Employee"
-  u.manager_id = manager_med.id if u.respond_to?(:manager_id)
+  u.manager = manager_med
 end
 
 serv_emp1 = User.find_or_create_by!(email: "serv_emp1@example.com") do |u|
   u.name = "Serv Employee 1"
   u.role = "Employee"
-  u.manager_id = manager_serv.id if u.respond_to?(:manager_id)
+  u.manager = manager_serv
 end
 
 serv_emp2 = User.find_or_create_by!(email: "serv_emp2@example.com") do |u|
   u.name = "Serv Employee 2"
   u.role = "Employee"
-  u.manager_id = manager_serv.id if u.respond_to?(:manager_id)
+  u.manager = manager_serv
 end
 
 # -----------------------------
@@ -98,4 +110,4 @@ tasks_data.each do |t|
   end
 end
 
-puts "✅ Seeded users, employees, and demo tasks successfully!"
+puts "✅ Seeded users, managers, employees, and demo tasks successfully!"

@@ -91,10 +91,16 @@ Rails.application.configure do
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 config.active_job.queue_adapter = :async
 
+# Disable ActionCable entirely
+config.action_cable.mount_path = nil
+config.action_cable.url = nil
+config.action_cable.allowed_request_origins = []
+
+
 
   config.public_file_server.enabled = true
 config.assets.compile = false
 config.assets.digest = true
-config.action_cable.mount_path = nil
+
 
 end

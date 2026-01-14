@@ -1,2 +1,22 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: workflow_demo_development
+  username: yusuf
+  password: Daniel
+  host: localhost
+
+test:
+  <<: *default
+  database: workflow_demo_test
+  username: yusuf
+  password: Daniel
+  host: localhost
+
 production:
+  <<: *default
   url: <%= ENV['DATABASE_URL'] %>
