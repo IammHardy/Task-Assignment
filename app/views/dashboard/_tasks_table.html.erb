@@ -1,69 +1,50 @@
-<%# app/views/dashboard/_tasks_table.html.erb %>
-
-<%# Ensure locals are defined to prevent NameError %>
-<% tasks_to_show ||= [] %>
-<% employees ||= [] %>
-<% active_view ||= "admin" %>
-<% active_employee ||= nil %>
-
-<table class="w-full table-auto border-collapse border border-gray-300">
+<table class="min-w-full border border-gray-200 rounded overflow-hidden">
   <thead class="bg-gray-100">
     <tr>
-      <th class="border px-4 py-2">Title</th>
-      <th class="border px-4 py-2">Employee</th>
-      <th class="border px-4 py-2">Manager</th>
-      <th class="border px-4 py-2">Status</th>
-      <th class="border px-4 py-2">Due Date</th>
-      <th class="border px-4 py-2">Actions</th>
+      <th class="px-4 py-2 border-b text-left">Title</th>
+      <th class="px-4 py-2 border-b text-left">Description</th>
+      <% if active_view.in?(%w[admin manager]) %>
+        <th class="px-4 py-2 border-b text-left">Assigned To</th>
+      <% end %>
+      <th class="px-4 py-2 border-b text-left">Due Date</th>
+      <th class="px-4 py-2 border-b text-left">Status</th>
+      <% if active_view == "employee" %>
+        <th class="px-4 py-2 border-b text-left">Action</th>
+      <% end %>
     </tr>
   </thead>
+
   <tbody>
-    <% if tasks_to_show.any? %>
-      <% tasks_to_show.each do |task| %>
-        <%= turbo_frame_tag "task_#{task.id}" do %>
-          <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.due_date && task.due_date < Date.today ? 'bg-red-50' : '' %>">
-            <td class="border px-4 py-2"><%= task.title.presence || "Untitled Task" %></td>
-            <td class="border px-4 py-2"><%= task.user&.name || "Unassigned" %></td>
-            <td class="border px-4 py-2"><%= task.user&.manager&.name || "Unassigned" %></td>
-            <td class="border px-4 py-2"><%= task.status.humanize %></td>
-            <td class="border px-4 py-2"><%= task.due_date&.strftime("%b %d, %Y") || "N/A" %></td>
-            <td class="border px-4 py-2 space-x-2">
-
-              <%# --- Employee view: Mark Complete button --- %>
-              <% if active_view == "employee" && task.user_id == active_employee&.id && task.status != "completed" %>
-                <%= button_to "Mark Complete",
-      mark_complete_dashboard_index_path(id: task.id, view: "employee", employee_id: active_employee.id),
-      method: :patch,
-      class: "bg-green-500 text-white px-2 py-1 rounded text-xs",
-      form: { data: { turbo_frame: "task_#{task.id}" } } %>
-
-                <% end %>
-
-
-
-              <%# --- Admin/Manager view: Update task form --- %>
-              <% if active_view.in?(["admin", "manager"]) %>
-                <%= form_with model: task,
-                      url: update_task_dashboard_path(task),
-                      method: :patch,
-                      local: true,
-                      class: "flex gap-2 items-center" do |f| %>
-
-                  <%= f.select :user_id, options_from_collection_for_select(employees, :id, :name, task.user_id) %>
-                  <%= f.select :status, Task.statuses.keys.map { |s| [s.humanize, s] }, selected: task.status %>
-                  <%= f.date_field :due_date, value: task.due_date %>
-                  <%= f.submit "Update", class: "bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs" %>
-                <% end %>
-              <% end %>
-
-            </td>
-          </tr>
+    <% tasks_to_show.each do |task| %>
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 border-b"><%= task.title %></td>
+        <td class="px-4 py-2 border-b"><%= task.description %></td>
+        <% if active_view.in?(%w[admin manager]) %>
+          <td class="px-4 py-2 border-b"><%= task.user.name %></td>
         <% end %>
-      <% end %>
-    <% else %>
-      <tr>
-        <td colspan="6" class="border px-4 py-2 text-center text-gray-500">No tasks found.</td>
+        <td class="px-4 py-2 border-b"><%= task.due_date&.strftime("%d %b %Y") %></td>
+        <td class="px-4 py-2 border-b">
+          <span class="<%= task.status == 'completed' ? 'text-green-600' : task.status == 'overdue' ? 'text-red-600' : 'text-yellow-600' %> font-semibold">
+            <%= task.status.capitalize %>
+          </span>
+        </td>
+        <% if active_view == "employee" %>
+          <td class="px-4 py-2 border-b">
+            <% if task.status != "completed" %>
+              <%= button_to "Mark Complete",
+                            mark_complete_dashboard_index_path(task),
+                            method: :patch,
+                            class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+            <% else %>
+              <span class="text-gray-500">Done</span>
+            <% end %>
+          </td>
+        <% end %>
       </tr>
     <% end %>
   </tbody>
 </table>
+
+<% if tasks_to_show.empty? %>
+  <p class="mt-4 text-gray-500">No tasks to display.</p>
+<% end %>
