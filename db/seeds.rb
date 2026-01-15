@@ -3,17 +3,12 @@
 # -----------------------------
 # Create Industries
 # -----------------------------
-industries = %w[law medical services]
-
-industry_records = industries.map do |name|
-  Industry.find_or_create_by!(name: name)
-end
-
-# make it easy to reference by name
-industry_hash = industry_records.index_by(&:name)
+law_industry = Industry.find_or_create_by!(name: "law")
+medical_industry = Industry.find_or_create_by!(name: "medical")
+services_industry = Industry.find_or_create_by!(name: "services")
 
 # -----------------------------
-# Keep old users
+# Keep old users (Admins or general users)
 # -----------------------------
 User.find_or_create_by!(email: "manager@example.com") do |u|
   u.name = "Manager John"
@@ -36,19 +31,19 @@ end
 manager_law = User.find_or_create_by!(email: "law_manager@example.com") do |u|
   u.name = "Law Manager"
   u.role = "Manager"
-  u.industry = industry_hash["law"]
+  u.industry = law_industry
 end
 
 manager_med = User.find_or_create_by!(email: "medical_manager@example.com") do |u|
   u.name = "Medical Manager"
   u.role = "Manager"
-  u.industry = industry_hash["medical"]
+  u.industry = medical_industry
 end
 
 manager_serv = User.find_or_create_by!(email: "services_manager@example.com") do |u|
   u.name = "Services Manager"
   u.role = "Manager"
-  u.industry = industry_hash["services"]
+  u.industry = services_industry
 end
 
 # -----------------------------
@@ -110,4 +105,4 @@ tasks_data.each do |t|
   end
 end
 
-puts "✅ Seeded users, managers, employees, and demo tasks successfully!"
+puts "✅ Seeded industries, users, employees, and demo tasks successfully!"
