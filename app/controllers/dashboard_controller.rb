@@ -29,36 +29,33 @@ class DashboardController < ApplicationController
   end
 
   # ------------------- MARK COMPLETE -------------------
-def mark_complete
-  @task = Task.find(params[:id])
-  @task.update(status: "completed")
+  def mark_complete
+    @task = Task.find(params[:id])
+    @task.update(status: "completed")
 
-  # Reload tasks for the current view so the page updates correctly
-  # Use the same logic as index
-  if params[:view] == "employee"
-    @active_view = "employee"
-    @active_employee = User.find(params[:employee_id]) if params[:employee_id].present?
-    @tasks_to_show = Task.where(user: @active_employee)
-  elsif params[:view] == "manager"
-    @active_view = "manager"
-    @active_manager = User.find(params[:manager_id]) if params[:manager_id].present?
-    @tasks_to_show = Task.where(user: @employees.where(manager_id: @active_manager.id))
-  else
-    @active_view = "admin"
-    @tasks_to_show = Task.all
+    # Reload tasks for the current view
+    case params[:view]
+    when "employee"
+      @active_view = "employee"
+      @active_employee = User.find(params[:employee_id]) if params[:employee_id].present?
+      @tasks_to_show = @active_employee.tasks.includes(:user)
+    when "manager"
+      @active_view = "manager"
+      @active_manager = User.find(params[:manager_id]) if params[:manager_id].present?
+      @tasks_to_show = Task.joins(:user).where(users: { manager_id: @active_manager.id })
+    else
+      @active_view = "admin"
+      @tasks_to_show = Task.all
+    end
+
+    @employees = User.where(role: "employee")
+    @managers = User.where(role: "manager")
+
+    respond_to do |format|
+      format.html { redirect_to dashboard_index_path(view: @active_view) }
+      format.turbo_stream
+    end
   end
-
-  @employees = User.where(role: "employee")
-  @managers = User.where(role: "manager")
-
-  respond_to do |format|
-    format.html { redirect_to dashboard_index_path(view: @active_view) }
-    format.turbo_stream
-  end
-end
-
-
-
 
   # ------------------- UPDATE TASK -------------------
   def update_task
@@ -74,7 +71,6 @@ end
         Rails.logger.info "TASK UPDATED: #{task.inspect}"
       else
         flash[:alert] = "Failed to update task: #{task.errors.full_messages.join(', ')}"
-        Rails.logger.error "TASK UPDATE FAILED: #{task.inspect}"
       end
     else
       flash[:alert] = "You do not have permission to update this task."
@@ -83,54 +79,26 @@ end
     redirect_to dashboard_index_path(view: @active_view, manager_id: params[:manager_id], employee_id: params[:employee_id])
   end
 
-
-  # Admin creating a manager
-# Admin creates manager (just name)
-def create_manager
-  @manager = User.new(name: params[:name], role: "manager")
-  if @manager.save
-    flash[:notice] = "Manager created successfully."
-  else
-    flash[:alert] = "Failed to create manager: #{@manager.errors.full_messages.join(', ')}"
+  # ------------------- ADMIN ACTIONS -------------------
+  # Create a manager
+  def create_manager
+    @manager = User.new(name: params[:name], role: "manager")
+    if @manager.save
+      flash[:notice] = "Manager created successfully."
+    else
+      flash[:alert] = "Failed to create manager: #{@manager.errors.full_messages.join(', ')}"
+    end
+    redirect_to dashboard_index_path(view: "admin")
   end
-  redirect_to dashboard_index_path(view: "admin")
-end
 
-# Admin assigns employee to a manager
-def assign_employee
-  employee = User.find(params[:employee_id])
-  manager = User.find(params[:manager_id])
-  
-  employee.update(manager_id: manager.id)
-  flash[:notice] = "#{employee.name} assigned to #{manager.name}."
-  redirect_to dashboard_index_path(view: "admin")
-end
-
-
-# Admin assigning employee to a manager
-def assign_employee
-  employee = User.find(params[:employee_id])
-  manager = User.find(params[:manager_id])
-  
-  employee.update(manager_id: manager.id)
-  flash[:notice] = "#{employee.name} assigned to #{manager.name}."
-  redirect_to dashboard_index_path(view: "admin")
-end
-
-private
-
-def user_params
-  params.require(:user).permit(:name, :email, :password, :password_confirmation)
-end
-
-  # ------------------- ASSIGN MANAGER -------------------
-  def assign_manager
+  # Assign an employee to a manager
+  def assign_employee
     employee = User.find_by(id: params[:employee_id])
     manager  = User.find_by(id: params[:manager_id])
 
     if employee && manager
       employee.update(manager_id: manager.id)
-      flash[:notice] = "#{employee.name} assigned to #{manager.name} successfully!"
+      flash[:notice] = "#{employee.name} assigned to #{manager.name}."
     else
       flash[:alert] = "Employee or manager not found."
     end
@@ -147,8 +115,8 @@ end
 
   def set_active_view_and_users
     @active_view = params[:view]&.downcase || "admin"
-    @managers = User.where(role: "Manager")
-    @employees = User.where(role: "Employee")
+    @managers = User.where(role: "manager")
+    @employees = User.where(role: "employee")
   end
 
   def set_active_employee

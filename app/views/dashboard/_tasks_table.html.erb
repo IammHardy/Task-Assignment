@@ -21,7 +21,7 @@
         <td class="px-4 py-2 border-b"><%= task.description %></td>
 
         <% if active_view.in?(%w[admin manager]) %>
-          <td class="px-4 py-2 border-b"><%= task.user.name %></td>
+          <td class="px-4 py-2 border-b"><%= task.user&.name || "Unassigned" %></td>
         <% end %>
 
         <td class="px-4 py-2 border-b"><%= task.due_date&.strftime("%d %b %Y") %></td>
@@ -35,9 +35,10 @@
           <td class="px-4 py-2 border-b">
             <% if task.status != "completed" %>
               <%= button_to "Mark Complete",
-                            mark_complete_dashboard_path(task, view: "employee", employee_id: @active_employee&.id),
+                            mark_complete_dashboard_path(task, view: "employee", employee_id: active_employee&.id),
                             method: :patch,
-                            class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+                            class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700",
+                            form: { data: { turbo_stream: true } } %>
             <% else %>
               <span class="text-gray-500">Done</span>
             <% end %>
