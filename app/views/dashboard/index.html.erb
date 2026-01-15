@@ -42,6 +42,37 @@
   </div>
 <% end %>
 
+
+<% if @active_view == "admin" %>
+  <div class="mb-6 p-4 border rounded bg-gray-50">
+    <h3 class="text-lg font-semibold mb-2">Create Manager</h3>
+
+    <%= form_with url: create_manager_dashboard_index_path, local: true do |f| %>
+      <div class="mb-2">
+        <%= f.label :name, class: "block font-medium" %>
+        <%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <%= f.submit "Create Manager", class: "bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" %>
+    <% end %>
+  </div>
+
+  <div class="mb-6 p-4 border rounded bg-gray-50">
+    <h3 class="text-lg font-semibold mb-2">Assign Employee to Manager</h3>
+
+    <%= form_with url: assign_employee_dashboard_index_path, local: true do |f| %>
+      <div class="mb-2">
+        <label class="block font-medium">Select Employee</label>
+        <%= select_tag :employee_id, options_from_collection_for_select(@employees, :id, :name), prompt: "Choose Employee", class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <div class="mb-2">
+        <label class="block font-medium">Select Manager</label>
+        <%= select_tag :manager_id, options_from_collection_for_select(@managers, :id, :name), prompt: "Choose Manager", class: "border rounded px-2 py-1 w-full" %>
+      </div>
+      <%= f.submit "Assign Employee", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+    <% end %>
+  </div>
+<% end %>
+
 <%# ------------------- MANAGER SELECTION DROPDOWN ------------------- %>
 <% if @active_view == "manager" %>
   <div class="mb-4 p-3 border rounded flex items-center space-x-4">
@@ -67,6 +98,7 @@
 <% end %>
 
 <%# ------------------- TASK TABLE ------------------- %>
+<%# ------------------- TASK TABLE ------------------- %>
 <% if @active_view == "admin" %>
   <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Tasks (Admin)</h2>
 <% elsif @active_view == "manager" %>
@@ -79,12 +111,17 @@
   </h2>
 <% end %>
 
-<%= render "dashboard/tasks_table",
-           tasks_to_show: @tasks_to_show,
-           active_view: @active_view,
-           current_user: @current_user,
-           active_employee: @active_employee,
-           employees: @employees %>
+<turbo-frame id="tasks-table">
+  <%= render "dashboard/tasks_table",
+             tasks_to_show: @tasks_to_show,
+             active_view: @active_view,
+             current_user: @current_user,
+             active_employee: @active_employee,
+             employees: @employees %>
+</turbo-frame>
+
+
+
 
 <%# ------------------- AI SUMMARY ------------------- %>
 <div id="ai_summary_frame">

@@ -4,6 +4,8 @@ resources :dashboard, only: [:index] do
   collection do
     post  :create_task
     post  :assign_manager
+    post :create_manager     # <-- new route
+  post :assign_employee    # <-- new route
   end
   member do
     patch :mark_complete

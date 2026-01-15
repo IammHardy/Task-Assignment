@@ -29,21 +29,35 @@ class DashboardController < ApplicationController
   end
 
   # ------------------- MARK COMPLETE -------------------
- def mark_complete
-  task = Task.find(params[:id])
-  task.update!(status: "completed") if @active_employee && task.user == @active_employee
+def mark_complete
+  @task = Task.find(params[:id])
+  @task.update(status: "completed")
+
+  # Reload tasks for the current view so the page updates correctly
+  # Use the same logic as index
+  if params[:view] == "employee"
+    @active_view = "employee"
+    @active_employee = User.find(params[:employee_id]) if params[:employee_id].present?
+    @tasks_to_show = Task.where(user: @active_employee)
+  elsif params[:view] == "manager"
+    @active_view = "manager"
+    @active_manager = User.find(params[:manager_id]) if params[:manager_id].present?
+    @tasks_to_show = Task.where(user: @employees.where(manager_id: @active_manager.id))
+  else
+    @active_view = "admin"
+    @tasks_to_show = Task.all
+  end
+
+  @employees = User.where(role: "employee")
+  @managers = User.where(role: "manager")
 
   respond_to do |format|
-    format.html { redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee&.id) }
-    format.turbo_stream do
-      render turbo_stream: turbo_stream.replace(
-        "tasks-table",
-        partial: "dashboard/tasks_table",
-        locals: tasks_table_locals_for_employee
-      )
-    end
+    format.html { redirect_to dashboard_index_path(view: @active_view) }
+    format.turbo_stream
   end
 end
+
+
 
 
   # ------------------- UPDATE TASK -------------------
@@ -68,6 +82,46 @@ end
 
     redirect_to dashboard_index_path(view: @active_view, manager_id: params[:manager_id], employee_id: params[:employee_id])
   end
+
+
+  # Admin creating a manager
+# Admin creates manager (just name)
+def create_manager
+  @manager = User.new(name: params[:name], role: "manager")
+  if @manager.save
+    flash[:notice] = "Manager created successfully."
+  else
+    flash[:alert] = "Failed to create manager: #{@manager.errors.full_messages.join(', ')}"
+  end
+  redirect_to dashboard_index_path(view: "admin")
+end
+
+# Admin assigns employee to a manager
+def assign_employee
+  employee = User.find(params[:employee_id])
+  manager = User.find(params[:manager_id])
+  
+  employee.update(manager_id: manager.id)
+  flash[:notice] = "#{employee.name} assigned to #{manager.name}."
+  redirect_to dashboard_index_path(view: "admin")
+end
+
+
+# Admin assigning employee to a manager
+def assign_employee
+  employee = User.find(params[:employee_id])
+  manager = User.find(params[:manager_id])
+  
+  employee.update(manager_id: manager.id)
+  flash[:notice] = "#{employee.name} assigned to #{manager.name}."
+  redirect_to dashboard_index_path(view: "admin")
+end
+
+private
+
+def user_params
+  params.require(:user).permit(:name, :email, :password, :password_confirmation)
+end
 
   # ------------------- ASSIGN MANAGER -------------------
   def assign_manager

@@ -31,16 +31,18 @@
         <% if active_view == "employee" %>
           <td class="px-4 py-2 border-b">
             <% if task.status != "completed" %>
-              <%= button_to "Mark Complete",
-                            mark_complete_dashboard_path(task),
-                            method: :patch,
-                            form: { data: { turbo_frame: "tasks-table" } }, # <-- turbo target
-                            class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
-            <% else %>
-              <span class="text-gray-500">Done</span>
-            <% end %>
-          </td>
-        <% end %>
+             <% if active_view == "employee" %>
+  <td class="px-4 py-2 border-b">
+    <% if task.status != "completed" %>
+      <%= button_to "Mark Complete",
+                    mark_complete_dashboard_path(task, view: "employee", employee_id: @active_employee&.id),
+                    method: :patch,
+                    class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+    <% else %>
+      <span class="text-gray-500">Done</span>
+    <% end %>
+  </td>
+<% end %>
       </tr>
     <% end %>
   </tbody>
