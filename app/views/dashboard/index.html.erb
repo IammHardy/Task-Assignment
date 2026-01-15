@@ -26,7 +26,7 @@
 
       <div class="mb-2">
         <%= f.label :title, class: "block font-medium" %>
-        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
+        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full", required: true %>
       </div>
 
       <div class="mb-2">
@@ -54,17 +54,27 @@
 
 <%# ------------------- ADMIN ACTIONS ------------------- %>
 <% if @active_view == "admin" %>
+  <%# Create Manager %>
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Create Manager</h3>
     <%= form_with url: create_manager_dashboard_index_path, local: true do |f| %>
       <div class="mb-2">
         <%= f.label :name, class: "block font-medium" %>
-        <%= f.text_field :name, class: "border rounded px-2 py-1 w-full" %>
+        <%= f.text_field :name, class: "border rounded px-2 py-1 w-full", required: true %>
+      </div>
+      <div class="mb-2">
+        <%= f.label :email, class: "block font-medium" %>
+        <%= f.email_field :email, class: "border rounded px-2 py-1 w-full", required: true %>
+      </div>
+      <div class="mb-2">
+        <%= f.label :password, class: "block font-medium" %>
+        <%= f.password_field :password, class: "border rounded px-2 py-1 w-full", required: true %>
       </div>
       <%= f.submit "Create Manager", class: "bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" %>
     <% end %>
   </div>
 
+  <%# Assign Employee to Manager %>
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Assign Employee to Manager</h3>
     <%= form_with url: assign_employee_dashboard_index_path, local: true do |f| %>

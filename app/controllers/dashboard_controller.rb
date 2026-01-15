@@ -87,33 +87,38 @@ class DashboardController < ApplicationController
 
   # ------------------- ADMIN ACTIONS -------------------
   # Create a manager
-  def create_manager
-    @manager = User.new(name: params[:name], role: "manager")
-    if @manager.save
-      flash[:notice] = "Manager created successfully."
-    else
-      flash[:alert] = "Failed to create manager: #{@manager.errors.full_messages.join(', ')}"
-    end
-    redirect_to dashboard_index_path(view: "admin")
+ def create_manager
+  # We now require email but no password
+  @manager = User.new(name: params[:name], email: params[:email], role: "Manager")
+
+  if @manager.save
+    flash[:notice] = "Manager created successfully."
+  else
+    flash[:alert] = "Failed to create manager: #{@manager.errors.full_messages.join(', ')}"
   end
+
+  redirect_to dashboard_index_path(view: "admin")
+end
+
 
   # Assign an employee to a manager
   def assign_employee
-    employee = User.find_by(id: params[:employee_id])
-    manager  = User.find_by(id: params[:manager_id])
+  employee = User.find_by(id: params[:employee_id])
+  manager  = User.find_by(id: params[:manager_id])
 
-    if employee && manager
-      if employee.update(manager_id: manager.id)
-        flash[:notice] = "#{employee.name} assigned to #{manager.name} successfully."
-      else
-        flash[:alert] = "Failed to assign employee: #{employee.errors.full_messages.join(', ')}"
-      end
+  if employee && manager
+    if employee.update(manager_id: manager.id)
+      flash[:notice] = "#{employee.name} assigned to #{manager.name} successfully."
     else
-      flash[:alert] = "Employee or manager not found."
+      flash[:alert] = "Failed to assign employee: #{employee.errors.full_messages.join(', ')}"
     end
-
-    redirect_to dashboard_index_path(view: "admin")
+  else
+    flash[:alert] = "Employee or manager not found."
   end
+
+  redirect_to dashboard_index_path(view: "admin")
+end
+
 
   # ------------------- HELPERS -------------------
   private
@@ -122,11 +127,14 @@ class DashboardController < ApplicationController
     @current_user ||= User.find_by(role: "admin")
   end
 
-  def set_active_view_and_users
-    @active_view = params[:view]&.downcase || "admin"
-    @managers = User.where(role: "manager")
-    @employees = User.where(role: "employee")
-  end
+ def set_active_view_and_users
+  @active_view = params[:view]&.downcase || "admin"
+
+  # Use exact role strings to match the User model
+  @managers = User.where(role: "Manager")
+  @employees = User.where(role: "Employee")
+end
+
 
   def set_active_employee
     return unless @active_view == "employee" || action_name == "mark_complete"
