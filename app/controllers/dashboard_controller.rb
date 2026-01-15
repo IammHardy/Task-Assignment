@@ -18,11 +18,11 @@ class DashboardController < ApplicationController
     task.status ||= "pending"
 
     if task.save
-      Rails.logger.info "TASK CREATED: #{task.inspect}"
       flash[:notice] = "Task created successfully."
+      Rails.logger.info "TASK CREATED: #{task.inspect}"
     else
-      Rails.logger.error "TASK FAILED: #{task.errors.full_messages.join(', ')}"
       flash[:alert] = "Failed to create task: #{task.errors.full_messages.join(', ')}"
+      Rails.logger.error "TASK FAILED: #{task.errors.full_messages.join(', ')}"
     end
 
     redirect_to dashboard_index_path(view: params[:view], manager_id: params[:manager_id], employee_id: params[:employee_id])
@@ -33,19 +33,23 @@ class DashboardController < ApplicationController
     @task = Task.find(params[:id])
     @task.update(status: "completed")
 
-    # Reload tasks for the current view
+    # Reload tasks based on active view
     case params[:view]
     when "employee"
       @active_view = "employee"
-      @active_employee = User.find(params[:employee_id]) if params[:employee_id].present?
-      @tasks_to_show = @active_employee.tasks.includes(:user)
+      @active_employee = User.find_by(id: params[:employee_id])
+      @tasks_to_show = @active_employee&.tasks&.includes(:user) || Task.none
     when "manager"
       @active_view = "manager"
-      @active_manager = User.find(params[:manager_id]) if params[:manager_id].present?
-      @tasks_to_show = Task.joins(:user).where(users: { manager_id: @active_manager.id })
+      @active_manager = User.find_by(id: params[:manager_id])
+      @tasks_to_show = if @active_manager
+                         Task.joins(:user).where(users: { manager_id: @active_manager.id })
+                       else
+                         Task.joins(:user).where(users: { manager_id: @managers.pluck(:id) })
+                       end
     else
       @active_view = "admin"
-      @tasks_to_show = Task.all
+      @tasks_to_show = Task.includes(:user).all
     end
 
     @employees = User.where(role: "employee")
@@ -60,17 +64,19 @@ class DashboardController < ApplicationController
   # ------------------- UPDATE TASK -------------------
   def update_task
     task = Task.find_by(id: params[:id])
+
     unless task
       flash[:alert] = "Task not found."
       redirect_to dashboard_index_path(view: @active_view) and return
     end
 
-    if @current_user.role.in?(%w[Manager Admin])
+    if @current_user.role.in?(%w[manager admin])
       if task.update(task_params)
-        flash[:notice] = "Task updated!"
+        flash[:notice] = "Task updated successfully."
         Rails.logger.info "TASK UPDATED: #{task.inspect}"
       else
         flash[:alert] = "Failed to update task: #{task.errors.full_messages.join(', ')}"
+        Rails.logger.error "TASK UPDATE FAILED: #{task.inspect}"
       end
     else
       flash[:alert] = "You do not have permission to update this task."
@@ -97,8 +103,11 @@ class DashboardController < ApplicationController
     manager  = User.find_by(id: params[:manager_id])
 
     if employee && manager
-      employee.update(manager_id: manager.id)
-      flash[:notice] = "#{employee.name} assigned to #{manager.name}."
+      if employee.update(manager_id: manager.id)
+        flash[:notice] = "#{employee.name} assigned to #{manager.name} successfully."
+      else
+        flash[:alert] = "Failed to assign employee: #{employee.errors.full_messages.join(', ')}"
+      end
     else
       flash[:alert] = "Employee or manager not found."
     end
@@ -110,7 +119,7 @@ class DashboardController < ApplicationController
   private
 
   def set_current_user
-    @current_user ||= User.find_by(role: "Admin")
+    @current_user ||= User.find_by(role: "admin")
   end
 
   def set_active_view_and_users

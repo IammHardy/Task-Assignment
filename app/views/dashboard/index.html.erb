@@ -1,3 +1,15 @@
+<%# ------------------- FLASH MESSAGES ------------------- %>
+<% if flash[:notice] %>
+  <div class="mb-4 p-3 bg-green-100 text-green-800 border border-green-300 rounded">
+    <%= flash[:notice] %>
+  </div>
+<% elsif flash[:alert] %>
+  <div class="mb-4 p-3 bg-red-100 text-red-800 border border-red-300 rounded">
+    <%= flash[:alert] %>
+  </div>
+<% end %>
+
+<%# ------------------- VIEW SWITCH LINKS ------------------- %>
 <div class="mb-4 p-3 border rounded flex space-x-2">
   <%= link_to "Admin", dashboard_index_path(view: "admin"), class: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
   <%= link_to "Manager", dashboard_index_path(view: "manager"), class: "px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700" %>
@@ -8,45 +20,42 @@
 <% if @active_view.in?(%w[admin manager]) %>
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Create New Task</h3>
-
     <%= form_with url: create_task_dashboard_index_path, scope: :task, local: true do |f| %>
-  <%= f.hidden_field :view, value: @active_view %>
-  <%= f.hidden_field :manager_id, value: @active_manager&.id if @active_view == "manager" %>
+      <%= f.hidden_field :view, value: @active_view %>
+      <%= f.hidden_field :manager_id, value: @active_manager&.id if @active_view == "manager" %>
 
-  <div class="mb-2">
-    <%= f.label :title, class: "block font-medium" %>
-    <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
-  </div>
+      <div class="mb-2">
+        <%= f.label :title, class: "block font-medium" %>
+        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full" %>
+      </div>
 
-  <div class="mb-2">
-    <%= f.label :description, class: "block font-medium" %>
-    <%= f.text_area :description, class: "border rounded px-2 py-1 w-full" %>
-  </div>
+      <div class="mb-2">
+        <%= f.label :description, class: "block font-medium" %>
+        <%= f.text_area :description, class: "border rounded px-2 py-1 w-full" %>
+      </div>
 
-  <div class="mb-2">
-    <%= f.label :user_id, "Assign to Employee", class: "block font-medium" %>
-    <% employees_for_assignment = @active_view == "manager" && @active_manager ? @employees.where(manager_id: @active_manager.id) : @employees %>
-    <%= f.select :user_id, options_from_collection_for_select(employees_for_assignment, :id, :name), prompt: "Select Employee", class: "border rounded px-2 py-1 w-full" %>
-  </div>
+      <div class="mb-2">
+        <%= f.label :user_id, "Assign to Employee", class: "block font-medium" %>
+        <% employees_for_assignment = @active_view == "manager" && @active_manager ? @employees.where(manager_id: @active_manager.id) : @employees %>
+        <%= f.select :user_id, options_from_collection_for_select(employees_for_assignment, :id, :name), prompt: "Select Employee", class: "border rounded px-2 py-1 w-full" %>
+      </div>
 
-  <div class="mb-2">
-    <%= f.label :due_date, class: "block font-medium" %>
-    <%= f.date_field :due_date, class: "border rounded px-2 py-1 w-full" %>
-  </div>
+      <div class="mb-2">
+        <%= f.label :due_date, class: "block font-medium" %>
+        <%= f.date_field :due_date, class: "border rounded px-2 py-1 w-full" %>
+      </div>
 
-  <div>
-    <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+      <div>
+        <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
+      </div>
+    <% end %>
   </div>
 <% end %>
 
-  </div>
-<% end %>
-
-
+<%# ------------------- ADMIN ACTIONS ------------------- %>
 <% if @active_view == "admin" %>
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Create Manager</h3>
-
     <%= form_with url: create_manager_dashboard_index_path, local: true do |f| %>
       <div class="mb-2">
         <%= f.label :name, class: "block font-medium" %>
@@ -58,7 +67,6 @@
 
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Assign Employee to Manager</h3>
-
     <%= form_with url: assign_employee_dashboard_index_path, local: true do |f| %>
       <div class="mb-2">
         <label class="block font-medium">Select Employee</label>
@@ -73,7 +81,7 @@
   </div>
 <% end %>
 
-<%# ------------------- MANAGER SELECTION DROPDOWN ------------------- %>
+<%# ------------------- MANAGER SELECTION ------------------- %>
 <% if @active_view == "manager" %>
   <div class="mb-4 p-3 border rounded flex items-center space-x-4">
     <label class="font-semibold">Select Manager:</label>
@@ -85,7 +93,7 @@
   </div>
 <% end %>
 
-<%# ------------------- EMPLOYEE SELECTION DROPDOWN ------------------- %>
+<%# ------------------- EMPLOYEE SELECTION ------------------- %>
 <% if @active_view == "employee" %>
   <div class="mb-4 p-3 border rounded flex items-center space-x-4">
     <label class="font-semibold">Select Employee:</label>
@@ -97,7 +105,6 @@
   </div>
 <% end %>
 
-<%# ------------------- TASK TABLE ------------------- %>
 <%# ------------------- TASK TABLE ------------------- %>
 <% if @active_view == "admin" %>
   <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Tasks (Admin)</h2>
@@ -119,9 +126,6 @@
              active_employee: @active_employee,
              employees: @employees %>
 </turbo-frame>
-
-
-
 
 <%# ------------------- AI SUMMARY ------------------- %>
 <div id="ai_summary_frame">
