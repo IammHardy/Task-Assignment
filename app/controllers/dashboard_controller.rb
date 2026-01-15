@@ -12,31 +12,51 @@ class DashboardController < ApplicationController
 
   # ------------------- TASK CREATION -------------------
   def create_task
+    unless @current_user
+      redirect_to root_path, alert: "You must be logged in to create a task" and return
+    end
+
     # Restrict manager assigning outside their team
     if @current_user.role == "Manager"
       allowed_employee_ids = @employees.where(manager_id: @current_user.id).pluck(:id)
       unless allowed_employee_ids.include?(task_params[:user_id].to_i)
         redirect_to dashboard_index_path(view: "manager", manager_id: @current_user.id),
-                    alert: "Cannot assign task to this employee"
-        return
+                    alert: "Cannot assign task to this employee" and return
       end
     end
 
     task = Task.new(task_params)
-    task.status ||= "pending"  # Default status
+    task.status ||= "pending"        # Default status
+    task.creator_id = @current_user.id if task.respond_to?(:creator_id)
     task.save!
 
-    redirect_to dashboard_index_path(view: params[:view], manager_id: params[:manager_id], employee_id: params[:employee_id])
+    redirect_to dashboard_index_path(
+      view: params[:view],
+      manager_id: params[:manager_id],
+      employee_id: params[:employee_id],
+      notice: "Task created successfully!"
+    )
   end
 
   # ------------------- MARK COMPLETE -------------------
   def mark_complete
+    unless @current_user
+      redirect_to root_path, alert: "You must be logged in" and return
+    end
+
     task = Task.find(params[:id])
-    task.update!(status: "completed") if task.user == @active_employee
+    # Only the employee assigned to this task can mark it complete
+    if task.user_id == @active_employee&.id
+      task.update!(status: "completed")
+    else
+      redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee&.id),
+                  alert: "Cannot mark this task complete" and return
+    end
 
     respond_to do |format|
       format.html do
-        redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee.id)
+        redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee.id),
+                    notice: "Task marked complete!"
       end
 
       format.turbo_stream do
@@ -52,7 +72,13 @@ class DashboardController < ApplicationController
   # ------------------- UPDATE TASK -------------------
   def update_task
     task = Task.find(params[:id])
-    task.update!(task_params) if @current_user.role.in?(%w[Manager Admin])
+
+    if @current_user.role.in?(%w[Manager Admin])
+      task.update!(task_params)
+    else
+      redirect_to dashboard_index_path(view: @active_view),
+                  alert: "You cannot update this task" and return
+    end
 
     respond_to do |format|
       format.html do
@@ -77,7 +103,7 @@ class DashboardController < ApplicationController
   # ------------------- ASSIGN MANAGER -------------------
   def assign_manager
     employee = User.find(params[:employee_id])
-    employee.update(manager_id: params[:manager_id])
+    employee.update!(manager_id: params[:manager_id])
     redirect_to dashboard_index_path(view: "admin"), notice: "#{employee.name} assigned to manager successfully!"
   end
 
@@ -85,6 +111,7 @@ class DashboardController < ApplicationController
   private
 
   def set_current_user
+    # Adjust this to your auth system
     @current_user ||= User.find_by(role: "Admin")
   end
 
@@ -153,7 +180,7 @@ class DashboardController < ApplicationController
     TEXT
   end
 
-  # Locals for tasks table
+  # ------------------- LOCALS FOR TASKS TABLE -------------------
   def tasks_table_locals
     {
       tasks_to_show: tasks_for_active_view,

@@ -2,12 +2,12 @@ Rails.application.routes.draw do
   # Dashboard
 resources :dashboard, only: [:index] do
   collection do
-    patch :mark_complete    # employee marking task complete
     post  :create_task
     post  :assign_manager
   end
   member do
-    patch :update_task      # updating a task for admin/manager
+    patch :mark_complete
+    patch :update_task
   end
 end
 
