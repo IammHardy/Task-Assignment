@@ -12,106 +12,82 @@ class DashboardController < ApplicationController
 
   # ------------------- TASK CREATION -------------------
   def create_task
-    unless @current_user
-      redirect_to root_path, alert: "You must be logged in to create a task" and return
-    end
-
-    # Restrict manager assigning outside their team
-    if @current_user.role == "Manager"
-      allowed_employee_ids = @employees.where(manager_id: @current_user.id).pluck(:id)
-      unless allowed_employee_ids.include?(task_params[:user_id].to_i)
-        redirect_to dashboard_index_path(view: "manager", manager_id: @current_user.id),
-                    alert: "Cannot assign task to this employee" and return
-      end
-    end
+    Rails.logger.info "TASK PARAMS: #{task_params.inspect}"
 
     task = Task.new(task_params)
-    task.status ||= "pending"        # Default status
-    task.creator_id = @current_user.id if task.respond_to?(:creator_id)
-    task.save!
+    task.status ||= "pending"
 
-    redirect_to dashboard_index_path(
-      view: params[:view],
-      manager_id: params[:manager_id],
-      employee_id: params[:employee_id],
-      notice: "Task created successfully!"
-    )
+    if task.save
+      Rails.logger.info "TASK CREATED: #{task.inspect}"
+      flash[:notice] = "Task created successfully."
+    else
+      Rails.logger.error "TASK FAILED: #{task.errors.full_messages.join(', ')}"
+      flash[:alert] = "Failed to create task: #{task.errors.full_messages.join(', ')}"
+    end
+
+    redirect_to dashboard_index_path(view: params[:view], manager_id: params[:manager_id], employee_id: params[:employee_id])
   end
 
   # ------------------- MARK COMPLETE -------------------
-  def mark_complete
-    unless @current_user
-      redirect_to root_path, alert: "You must be logged in" and return
-    end
+ def mark_complete
+  task = Task.find(params[:id])
+  task.update!(status: "completed") if @active_employee && task.user == @active_employee
 
-    task = Task.find(params[:id])
-    # Only the employee assigned to this task can mark it complete
-    if task.user_id == @active_employee&.id
-      task.update!(status: "completed")
-    else
-      redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee&.id),
-                  alert: "Cannot mark this task complete" and return
-    end
-
-    respond_to do |format|
-      format.html do
-        redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee.id),
-                    notice: "Task marked complete!"
-      end
-
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "tasks-table",
-          partial: "dashboard/tasks_table",
-          locals: tasks_table_locals_for_employee
-        )
-      end
+  respond_to do |format|
+    format.html { redirect_to dashboard_index_path(view: "employee", employee_id: @active_employee&.id) }
+    format.turbo_stream do
+      render turbo_stream: turbo_stream.replace(
+        "tasks-table",
+        partial: "dashboard/tasks_table",
+        locals: tasks_table_locals_for_employee
+      )
     end
   end
+end
+
 
   # ------------------- UPDATE TASK -------------------
   def update_task
-    task = Task.find(params[:id])
+    task = Task.find_by(id: params[:id])
+    unless task
+      flash[:alert] = "Task not found."
+      redirect_to dashboard_index_path(view: @active_view) and return
+    end
 
     if @current_user.role.in?(%w[Manager Admin])
-      task.update!(task_params)
+      if task.update(task_params)
+        flash[:notice] = "Task updated!"
+        Rails.logger.info "TASK UPDATED: #{task.inspect}"
+      else
+        flash[:alert] = "Failed to update task: #{task.errors.full_messages.join(', ')}"
+        Rails.logger.error "TASK UPDATE FAILED: #{task.inspect}"
+      end
     else
-      redirect_to dashboard_index_path(view: @active_view),
-                  alert: "You cannot update this task" and return
+      flash[:alert] = "You do not have permission to update this task."
     end
 
-    respond_to do |format|
-      format.html do
-        redirect_to dashboard_index_path(
-          view: @active_view,
-          manager_id: params[:manager_id],
-          employee_id: params[:employee_id],
-          notice: "Task updated!"
-        )
-      end
-
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "tasks-table",
-          partial: "dashboard/tasks_table",
-          locals: tasks_table_locals
-        )
-      end
-    end
+    redirect_to dashboard_index_path(view: @active_view, manager_id: params[:manager_id], employee_id: params[:employee_id])
   end
 
   # ------------------- ASSIGN MANAGER -------------------
   def assign_manager
-    employee = User.find(params[:employee_id])
-    employee.update!(manager_id: params[:manager_id])
-    redirect_to dashboard_index_path(view: "admin"), notice: "#{employee.name} assigned to manager successfully!"
+    employee = User.find_by(id: params[:employee_id])
+    manager  = User.find_by(id: params[:manager_id])
+
+    if employee && manager
+      employee.update(manager_id: manager.id)
+      flash[:notice] = "#{employee.name} assigned to #{manager.name} successfully!"
+    else
+      flash[:alert] = "Employee or manager not found."
+    end
+
+    redirect_to dashboard_index_path(view: "admin")
   end
 
   # ------------------- HELPERS -------------------
   private
 
   def set_current_user
-    # Adjust this to your auth system
     @current_user ||= User.find_by(role: "Admin")
   end
 
@@ -123,12 +99,20 @@ class DashboardController < ApplicationController
 
   def set_active_employee
     return unless @active_view == "employee" || action_name == "mark_complete"
-    @active_employee = params[:employee_id].present? ? @employees.find(params[:employee_id]) : @employees.first
+    @active_employee = if params[:employee_id].present?
+                         @employees.find_by(id: params[:employee_id])
+                       else
+                         @employees.first
+                       end
   end
 
   def set_active_manager
     return unless @active_view == "manager"
-    @active_manager = params[:manager_id].present? ? @managers.find(params[:manager_id]) : nil
+    @active_manager = if params[:manager_id].present?
+                        @managers.find_by(id: params[:manager_id])
+                      else
+                        nil
+                      end
   end
 
   def tasks_for_active_view
@@ -142,7 +126,7 @@ class DashboardController < ApplicationController
         Task.joins(:user).where(users: { manager_id: @managers.pluck(:id) })
       end
     when "employee"
-      @active_employee.tasks.includes(:user)
+      @active_employee&.tasks&.includes(:user) || Task.none
     else
       Task.none
     end
@@ -178,24 +162,5 @@ class DashboardController < ApplicationController
       Overdue: #{overdue}
       Suggestions: #{suggestions.join(" ")}
     TEXT
-  end
-
-  # ------------------- LOCALS FOR TASKS TABLE -------------------
-  def tasks_table_locals
-    {
-      tasks_to_show: tasks_for_active_view,
-      active_view: @active_view,
-      active_employee: @active_employee,
-      employees: @employees
-    }
-  end
-
-  def tasks_table_locals_for_employee
-    {
-      tasks_to_show: @active_employee.tasks.includes(:user),
-      active_view: "employee",
-      active_employee: @active_employee,
-      employees: @employees
-    }
   end
 end
