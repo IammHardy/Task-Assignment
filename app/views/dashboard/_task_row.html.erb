@@ -1,63 +1,91 @@
-<%# Reusable task row partial. Expects local `task` and optionally `active_view`, `active_employee`, or `employee` %>
-<% view = (local_assigns[:active_view] rescue nil) || @active_view || (defined?(employee) ? 'employee' : 'admin') %>
-<% current_employee = (local_assigns[:active_employee] rescue nil) || @active_employee || (defined?(employee) ? employee : nil) %>
+<turbo-frame id="task_<%= task.id %>">
+<tr class="border-b hover:bg-gray-50">
 
+  <!-- Title -->
+  <td class="px-4 py-2 border">
+    <%= task.title %>
+    <% if task.description.present? %>
+      <div class="text-sm text-gray-500"><%= task.description %></div>
+    <% end %>
+  </td>
 
-<tr id="<%= dom_id(task) %>" class="transition hover:bg-gray-50 
-  <%= task.completed_status? ? 'bg-green-50' : (task.overdue_status? ? 'bg-red-50' : '') %>">
+  <!-- Assigned Employee -->
+  <td class="px-4 py-2 border">
+    <%= task.user&.name || "Unassigned" %>
+  </td>
 
-  <td class="px-6 py-4 text-gray-800 font-medium"><%= task.title %></td>
-  <td class="px-6 py-4 text-gray-700"><%= truncate(task.description, length: 80) %></td>
-
-
-  <% if view.in?(%w[admin manager]) %>
-    <td class="px-6 py-4 text-gray-700"><%= task.user&.name || "Unassigned" %></td>
-  <% end %>
-
-  <%# Status badge %>
-  <% status_classes = case task.status
-    when "pending" then "bg-yellow-100 text-yellow-800"
-    when "in_progress" then "bg-blue-100 text-blue-800"
-    when "completed" then "bg-green-100 text-green-800"
-    when "overdue" then "bg-red-100 text-red-800"
-    else "bg-gray-100 text-gray-800"
-  end %>
-
-  <td class="px-6 py-4">
-    <span class="px-2 py-1 rounded text-xs font-semibold <%= status_classes %>">
+  <!-- Status -->
+  <td class="px-4 py-2 border">
+    <span class="px-2 py-1 rounded text-white
+      <%= case task.status
+          when "completed" then "bg-green-500"
+          when "in_progress" then "bg-yellow-500"
+          else "bg-gray-500"
+          end %>">
       <%= task.status.humanize %>
     </span>
   </td>
 
-  <td class="px-6 py-4 text-gray-700"><%= task.due_date&.strftime("%b %d, %Y") || "N/A" %></td>
+  <!-- Priority -->
+  <td class="px-4 py-2 border">
+    <span class="px-2 py-1 rounded text-white
+      <%= case task.priority
+          when "high" then "bg-red-500"
+          when "medium" then "bg-yellow-500"
+          else "bg-green-500"
+          end %>">
+      <%= task.priority.humanize %>
+    </span>
+  </td>
 
-  <%# Actions %>
-  <td class="px-6 py-4 flex space-x-2 items-center">
-    <% if view == 'employee' && (current_employee.nil? || task.user_id == current_employee.id) %>
-      <% if !task.status_completed? %>
-        <%= button_to "Mark Complete",
-              mark_complete_dashboard_path(task, view: "employee", employee_id: current_employee&.id),
-              method: :patch,
-              class: "bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600",
-              form: { data: { turbo_stream: true } } %>
-      <% else %>
-        <%= button_to "Undo",
-              undo_mark_complete_dashboard_path(task, view: "employee", employee_id: current_employee&.id),
-              method: :patch,
-              class: "bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600",
-              form: { data: { turbo_stream: true } } %>
-      <% end %>
-    <% end %>
+  <!-- Due Date -->
+  <td class="px-4 py-2 border">
+    <%= task.due_date ? task.due_date.strftime("%d %b %Y") : "-" %>
+  </td>
 
-    <% if view.in?(%w[admin manager]) %>
-      <%= link_to "Edit", "#", class: "bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs cursor-not-allowed" %>
-      <%= button_to "Delete", task_path(task), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" %>
-      <%= form_with model: task, url: update_task_dashboard_path(task), method: :patch, class: "flex gap-2 items-center" do |f| %>
-        <%= f.select :user_id, options_from_collection_for_select(@employees, :id, :name, task.user_id), class: "border rounded px-2 py-1 text-xs" %>
-        <%= f.select :status, Task.statuses.keys.map { |s| [s.humanize, s] }, selected: task.status, class: "border rounded px-2 py-1 text-xs" %>
-        <%= f.date_field :due_date, value: task.due_date, class: "border rounded px-2 py-1 text-xs" %>
-        <%= f.submit "Update", class: "bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs" %>
+  <!-- Documents -->
+  <td class="px-4 py-2 border">
+    <% if task.files.attached? %>
+      <% task.files.each do |file| %>
+        <div>
+          <%= link_to file.filename, url_for(file),
+              class: "text-blue-600 underline",
+              target: "_blank" %>
+        </div>
       <% end %>
+    <% else %>
+      <span class="text-gray-400">No files</span>
     <% end %>
   </td>
+
+  <!-- Actions -->
+  <td class="px-4 py-2 border space-x-2">
+
+    <% if active_view.in?(["admin", "manager"]) %>
+
+      <%= link_to "Edit",
+          edit_task_path(task),
+          class: "text-blue-600 hover:underline" %>
+
+      <%= link_to "Delete",
+          task_path(task),
+          data: { turbo_method: :delete, turbo_confirm: "Delete this task?" },
+          class: "text-red-600 hover:underline" %>
+
+    <% end %>
+
+    <% if active_view == "employee" && task.user == current_user %>
+
+      <% if task.status != "completed" %>
+        <%= link_to "Mark Complete",
+            complete_task_path(task),
+            data: { turbo_method: :patch },
+            class: "text-green-600 hover:underline" %>
+      <% end %>
+
+    <% end %>
+
+  </td>
+
 </tr>
+</turbo-frame>

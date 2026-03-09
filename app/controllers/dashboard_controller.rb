@@ -11,27 +11,26 @@ class DashboardController < ApplicationController
   end
 
   # ------------------- TASK CREATION -------------------
-  def create_task
-    Rails.logger.info "TASK PARAMS: #{task_params.inspect}"
+def create_task
+  @task = Task.new(task_params)
+  @task.status ||= "pending"
 
-    task = Task.new(task_params)
-    task.status ||= "pending" # assign default
-
-    if task.save
-      flash[:notice] = "Task created successfully."
-      Rails.logger.info "TASK CREATED: #{task.inspect}"
-    else
-      flash[:alert] = "Failed to create task: #{task.errors.full_messages.join(', ')}"
-      Rails.logger.error "TASK FAILED: #{task.errors.full_messages.join(', ')}"
-    end
-
-    redirect_to dashboard_index_path(
-      view: params[:view],
-      manager_id: params[:manager_id],
-      employee_id: params[:employee_id]
+  if @task.save
+    # Turbo stream will handle the prepend
+  else
+    flash.now[:alert] = "Failed to create task: #{@task.errors.full_messages.join(', ')}"
+    render turbo_stream: turbo_stream.replace(
+      "task-form",
+      partial: "tasks/form",
+      locals: {
+        task: @task,
+        employees: (@active_view == "manager" && @active_manager ? @employees.where(manager_id: @active_manager.id) : @employees),
+        managers: @managers,
+        active_view: @active_view
+      }
     )
   end
-
+end
   # ------------------- MARK COMPLETE -------------------
   def mark_complete
     @task = Task.find(params[:id])
@@ -183,7 +182,7 @@ class DashboardController < ApplicationController
 
   # Only allow these task params
   def task_params
-    params.require(:task).permit(:title, :description, :user_id, :assigned_date, :due_date, :status, :priority)
+    params.require(:task).permit(:title, :description, :user_id, :assigned_date, :due_date, :status, :priority, files: [])
   end
 
   # Reload tasks after mark/undo actions
@@ -224,11 +223,28 @@ class DashboardController < ApplicationController
 
   employees_pending = tasks.group_by(&:user).transform_values { |t| t.count(&:pending_status?) }
 
+  due_soon = tasks.select do |t|
+  t.pending_status? && t.due_date && t.due_date <= Date.today + 1
+end
+
+suggestions << "⚠ #{due_soon.count} task(s) due within 24 hours." if due_soon.any?
+
   max_pending = employees_pending.values.max
   if max_pending && max_pending > 3
     overworked = employees_pending.select { |_, v| v == max_pending }.keys.map(&:name).join(", ")
     suggestions << "Consider reassigning tasks for overworked employee(s): #{overworked}."
   end
+
+  employee_completed = tasks.group_by(&:user).transform_values { |t| t.count(&:completed_status?) }
+
+best = employee_completed.max_by { |_, v| v }
+suggestions << "Top performer: #{best[0].name} (#{best[1]} completed tasks)" if best
+
+heavy = employees_pending.select { |_, v| v > 5 }
+if heavy.any?
+  names = heavy.keys.map(&:name).join(", ")
+  suggestions << "⚠ Heavy workload detected for: #{names}"
+end
 
   <<~TEXT.strip
     Total tasks: #{total}

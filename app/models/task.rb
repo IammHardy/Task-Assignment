@@ -1,10 +1,15 @@
 class Task < ApplicationRecord
   belongs_to :user
   belongs_to :manager, class_name: "User", optional: true
-
+  has_many_attached :files
+ 
   before_save :mark_overdue
 
   validates :title, :status, :due_date, presence: true
+
+   after_initialize do
+  self.priority ||= "low"
+end
 
   enum :status, {
     pending: "pending",

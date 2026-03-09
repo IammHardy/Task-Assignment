@@ -10,59 +10,66 @@
 <% end %>
 
 <%# VIEW SWITCH LINKS %>
-<div class="mb-4 p-3 border rounded flex space-x-2">
+<div class="mb-4 p-3 border rounded flex space-x-2 items-center">
   <%= link_to "Admin", dashboard_index_path(view: "admin"), class: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
   <%= link_to "Manager", dashboard_index_path(view: "manager"), class: "px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700" %>
   <%= link_to "Employee", dashboard_index_path(view: "employee"), class: "px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600" %>
+
+  <%# --- Manager / Employee selector --- %>
+  <% if @active_view == "manager" %>
+    <%= turbo_frame_tag "manager_selector" do %>
+      <%= form_with url: dashboard_index_path, method: :get, local: false, data: { turbo_frame: "tasks-table" } do %>
+        <%= hidden_field_tag :view, "manager" %>
+        <%= select_tag :manager_id,
+            options_from_collection_for_select(@managers, :id, :name, @active_manager&.id),
+            class: "ml-2 border rounded px-2 py-1",
+            onchange: "this.form.submit();" %>
+      <% end %>
+    <% end %>
+  <% elsif @active_view == "employee" %>
+    <%= turbo_frame_tag "employee_selector" do %>
+      <%= form_with url: dashboard_index_path, method: :get, local: false, data: { turbo_frame: "tasks-table" } do %>
+        <%= hidden_field_tag :view, "employee" %>
+        <%= select_tag :employee_id,
+            options_from_collection_for_select(@employees, :id, :name, @active_employee&.id),
+            class: "ml-2 border rounded px-2 py-1",
+            onchange: "this.form.submit();" %>
+      <% end %>
+    <% end %>
+  <% end %>
 </div>
 
-<%# ADMIN/MANAGER CREATE TASK FORM %>
+<%# --- CREATE TASK FORM (Admin/Manager) --- %>
 <% if @active_view.in?(%w[admin manager]) %>
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Create New Task</h3>
-    <%= form_with url: create_task_dashboard_index_path, scope: :task, local: true do |f| %>
-      <%= f.hidden_field :view, value: @active_view %>
-      <%= f.hidden_field :manager_id, value: @active_manager&.id if @active_view == "manager" %>
 
-      <div class="mb-2">
-        <%= f.label :title, class: "block font-medium" %>
-        <%= f.text_field :title, class: "border rounded px-2 py-1 w-full", required: true %>
-      </div>
+    <turbo-frame id="task-form">
+      <%= render "tasks/form",
+          task: Task.new,
+          employees: (@active_view == "manager" && @active_manager ? @employees.where(manager_id: @active_manager.id) : @employees),
+          managers: @managers,
+          active_view: @active_view %>
+    </turbo-frame>
 
-      <div class="mb-2">
-        <%= f.label :description, class: "block font-medium" %>
-        <%= f.text_area :description, class: "border rounded px-2 py-1 w-full" %>
-      </div>
-
-      <div class="mb-2">
-        <%= f.label :user_id, "Assign to Employee", class: "block font-medium" %>
-        <% employees_for_assignment = @active_view == "manager" && @active_manager ? @employees.where(manager_id: @active_manager.id) : @employees %>
-        <%= f.select :user_id, options_from_collection_for_select(employees_for_assignment, :id, :name), prompt: "Select Employee", class: "border rounded px-2 py-1 w-full" %>
-      </div>
-
-      <div class="mb-2">
-        <%= f.label :due_date, class: "block font-medium" %>
-        <%= f.date_field :due_date, class: "border rounded px-2 py-1 w-full" %>
-      </div>
-
-      <div class="mb-2">
-        <%= f.label :priority, class: "block font-medium" %>
-        <%= f.select :priority, Task.priorities.keys.map { |p| [p.humanize, p] }, prompt: "Select Priority", class: "border rounded px-2 py-1 w-full" %>
-      </div>
-
-      <div>
-        <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
-      </div>
-    <% end %>
+    <turbo-frame id="task-msg"></turbo-frame>
   </div>
 <% end %>
 
-<%# TASK TABLE %>
+<%# --- TASKS TABLE --- %>
+
 <turbo-frame id="tasks-table">
-  <%= render "dashboard/tasks_table", tasks_to_show: @tasks_to_show, active_view: @active_view, current_user: @current_user, active_employee: @active_employee, employees: @employees %>
+  <%= render "dashboard/tasks_table",
+      tasks_to_show: @tasks_to_show,
+      active_view: @active_view,
+      current_user: @current_user,
+      active_employee: @active_employee,
+      active_manager: @active_manager,
+      employees: @employees,
+      managers: @managers %>
 </turbo-frame>
 
-<%# AI SUMMARY %>
+<%# --- AI Summary --- %>
 <div id="ai_summary_frame" class="mt-4 p-3 border rounded bg-gray-50">
   <%= @ai_summary if defined?(@ai_summary) %>
 </div>

@@ -1,27 +1,26 @@
-<table class="min-w-full border border-gray-200 rounded overflow-hidden">
-  <thead class="bg-gray-100">
-    <tr>
-      <th class="px-4 py-2 border-b text-left">Title</th>
-      <th class="px-4 py-2 border-b text-left">Description</th>
-      <% if @active_view.in?(%w[admin manager]) %>
-        <th class="px-4 py-2 border-b text-left">Assigned To</th>
-      <% end %>
-      <th class="px-4 py-2 border-b text-left">Due Date</th>
-      <th class="px-4 py-2 border-b text-left">Status</th>
-      <% if @active_view == "employee" %>
-        <th class="px-4 py-2 border-b text-left">Action</th>
-      <% end %>
-    </tr>
-  </thead>
+<div class="overflow-x-auto">
+  <table class="min-w-full border border-gray-200 rounded">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-4 py-2 border">Title</th>
+        <th class="px-4 py-2 border">Employee</th>
+        <th class="px-4 py-2 border">Status</th>
+        <th class="px-4 py-2 border">Priority</th>
+        <th class="px-4 py-2 border">Due Date</th>
+        <th class="px-4 py-2 border">Documents</th>
+        <th class="px-4 py-2 border">Actions</th>
+      </tr>
+    </thead>
 
-  <tbody>
-    <% tasks = (local_assigns[:tasks_to_show] rescue nil) || @tasks_to_show || [] %>
-    <% tasks.each do |task| %>
-      <%= render partial: "dashboard/task_row", locals: { task: task, active_view: @active_view, active_employee: @active_employee } %>
-    <% end %>
-  </tbody>
-</table>
-
-<% if tasks.empty? %>
-  <p class="mt-4 text-gray-500">No tasks to display.</p>
-<% end %>
+    <tbody id="tasks-table">
+      <% tasks_to_show.each do |task| %>
+        <%= render "dashboard/task_row",
+            task: task,
+            active_view: active_view,
+            current_user: current_user,
+            employees: employees,
+            managers: managers %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
