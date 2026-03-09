@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title><%= content_for(:title) || "Workflow Demo" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
+<head>
+  <title>TASK APP</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
 
-    <%= stylesheet_link_tag "application.css", "data-turbo-track": "reload" %>
-
-    
-    <%= javascript_importmap_tags %>
-  </head>
-
-  <body class="bg-gray-100">
+ <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_importmap_tags %>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+  <header class="bg-white shadow p-4 mb-6">
+    <h1 class="text-2xl font-bold text-gray-700">Dashboard</h1>
+  </header>
+  <main class="container mx-auto px-4">
     <%= yield %>
-  </body>
+  </main>
+  <footer class="text-center text-sm text-gray-500 py-4">
+    &copy; <%= Time.current.year %> YourApp. All rights reserved.
+  </footer>
+
+</body>
 </html>

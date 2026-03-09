@@ -1,4 +1,4 @@
-<%# ------------------- FLASH MESSAGES ------------------- %>
+<%# FLASH MESSAGES %>
 <% if flash[:notice] %>
   <div class="mb-4 p-3 bg-green-100 text-green-800 border border-green-300 rounded">
     <%= flash[:notice] %>
@@ -9,14 +9,14 @@
   </div>
 <% end %>
 
-<%# ------------------- VIEW SWITCH LINKS ------------------- %>
+<%# VIEW SWITCH LINKS %>
 <div class="mb-4 p-3 border rounded flex space-x-2">
   <%= link_to "Admin", dashboard_index_path(view: "admin"), class: "px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
   <%= link_to "Manager", dashboard_index_path(view: "manager"), class: "px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700" %>
   <%= link_to "Employee", dashboard_index_path(view: "employee"), class: "px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600" %>
 </div>
 
-<%# ------------------- ADMIN & MANAGER CREATE TASK FORM ------------------- %>
+<%# ADMIN/MANAGER CREATE TASK FORM %>
 <% if @active_view.in?(%w[admin manager]) %>
   <div class="mb-6 p-4 border rounded bg-gray-50">
     <h3 class="text-lg font-semibold mb-2">Create New Task</h3>
@@ -45,6 +45,11 @@
         <%= f.date_field :due_date, class: "border rounded px-2 py-1 w-full" %>
       </div>
 
+      <div class="mb-2">
+        <%= f.label :priority, class: "block font-medium" %>
+        <%= f.select :priority, Task.priorities.keys.map { |p| [p.humanize, p] }, prompt: "Select Priority", class: "border rounded px-2 py-1 w-full" %>
+      </div>
+
       <div>
         <%= f.submit "Create Task", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
       </div>
@@ -52,92 +57,12 @@
   </div>
 <% end %>
 
-<%# ------------------- ADMIN ACTIONS ------------------- %>
-<% if @active_view == "admin" %>
-  <%# Create Manager %>
-  <div class="mb-6 p-4 border rounded bg-gray-50">
-    <h3 class="text-lg font-semibold mb-2">Create Manager</h3>
-    <%= form_with url: create_manager_dashboard_index_path, local: true do |f| %>
-      <div class="mb-2">
-        <%= f.label :name, class: "block font-medium" %>
-        <%= f.text_field :name, class: "border rounded px-2 py-1 w-full", required: true %>
-      </div>
-      <div class="mb-2">
-        <%= f.label :email, class: "block font-medium" %>
-        <%= f.email_field :email, class: "border rounded px-2 py-1 w-full", required: true %>
-      </div>
-      <div class="mb-2">
-        <%= f.label :password, class: "block font-medium" %>
-        <%= f.password_field :password, class: "border rounded px-2 py-1 w-full", required: true %>
-      </div>
-      <%= f.submit "Create Manager", class: "bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" %>
-    <% end %>
-  </div>
-
-  <%# Assign Employee to Manager %>
-  <div class="mb-6 p-4 border rounded bg-gray-50">
-    <h3 class="text-lg font-semibold mb-2">Assign Employee to Manager</h3>
-    <%= form_with url: assign_employee_dashboard_index_path, local: true do |f| %>
-      <div class="mb-2">
-        <label class="block font-medium">Select Employee</label>
-        <%= select_tag :employee_id, options_from_collection_for_select(@employees, :id, :name), prompt: "Choose Employee", class: "border rounded px-2 py-1 w-full" %>
-      </div>
-      <div class="mb-2">
-        <label class="block font-medium">Select Manager</label>
-        <%= select_tag :manager_id, options_from_collection_for_select(@managers, :id, :name), prompt: "Choose Manager", class: "border rounded px-2 py-1 w-full" %>
-      </div>
-      <%= f.submit "Assign Employee", class: "bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700" %>
-    <% end %>
-  </div>
-<% end %>
-
-<%# ------------------- MANAGER SELECTION ------------------- %>
-<% if @active_view == "manager" %>
-  <div class="mb-4 p-3 border rounded flex items-center space-x-4">
-    <label class="font-semibold">Select Manager:</label>
-    <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
-      <%= f.hidden_field :view, value: "manager" %>
-      <%= f.select :manager_id, options_from_collection_for_select(@managers, :id, :name, @active_manager&.id), prompt: "All Managers", class: "border rounded px-2 py-1" %>
-      <%= f.submit "Switch", class: "bg-green-600 text-white px-3 py-1 rounded" %>
-    <% end %>
-  </div>
-<% end %>
-
-<%# ------------------- EMPLOYEE SELECTION ------------------- %>
-<% if @active_view == "employee" %>
-  <div class="mb-4 p-3 border rounded flex items-center space-x-4">
-    <label class="font-semibold">Select Employee:</label>
-    <%= form_with url: dashboard_index_path, method: :get, local: true, class: "flex space-x-2" do |f| %>
-      <%= f.hidden_field :view, value: "employee" %>
-      <%= f.select :employee_id, options_from_collection_for_select(@employees, :id, :name, @active_employee&.id), prompt: "Select Employee", class: "border rounded px-2 py-1" %>
-      <%= f.submit "Switch", class: "bg-yellow-500 text-white px-3 py-1 rounded" %>
-    <% end %>
-  </div>
-<% end %>
-
-<%# ------------------- TASK TABLE ------------------- %>
-<% if @active_view == "admin" %>
-  <h2 class="text-2xl font-semibold mb-4 text-gray-700">All Tasks (Admin)</h2>
-<% elsif @active_view == "manager" %>
-  <h2 class="text-2xl font-semibold mb-4 text-gray-700">
-    Tasks for <%= @active_manager&.name || "All Managers" %>
-  </h2>
-<% elsif @active_view == "employee" %>
-  <h2 class="text-2xl font-semibold mb-4 text-gray-700">
-    Tasks for <%= @active_employee&.name || "Employee" %>
-  </h2>
-<% end %>
-
+<%# TASK TABLE %>
 <turbo-frame id="tasks-table">
-  <%= render "dashboard/tasks_table",
-             tasks_to_show: @tasks_to_show,
-             active_view: @active_view,
-             current_user: @current_user,
-             active_employee: @active_employee,
-             employees: @employees %>
+  <%= render "dashboard/tasks_table", tasks_to_show: @tasks_to_show, active_view: @active_view, current_user: @current_user, active_employee: @active_employee, employees: @employees %>
 </turbo-frame>
 
-<%# ------------------- AI SUMMARY ------------------- %>
-<div id="ai_summary_frame">
+<%# AI SUMMARY %>
+<div id="ai_summary_frame" class="mt-4 p-3 border rounded bg-gray-50">
   <%= @ai_summary if defined?(@ai_summary) %>
 </div>

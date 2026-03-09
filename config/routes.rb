@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     end
     member do
       patch :mark_complete
+      patch :undo_mark_complete
       patch :update_task
     end
   end

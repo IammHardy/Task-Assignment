@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_13_213849) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_08_191353) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -18,6 +18,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_13_213849) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "task_status_changes", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.string "from_status"
+    t.string "to_status"
+    t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["task_id", "created_at"], name: "index_task_status_changes_on_task_id_and_created_at"
+    t.index ["task_id"], name: "index_task_status_changes_on_task_id"
   end
 
   create_table "tasks", force: :cascade do |t|
@@ -30,6 +41,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_13_213849) do
     t.datetime "updated_at", null: false
     t.integer "manager_id"
     t.date "assigned_date"
+    t.string "priority"
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
@@ -46,6 +58,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_13_213849) do
     t.index ["manager_id"], name: "index_users_on_manager_id"
   end
 
+  add_foreign_key "task_status_changes", "tasks"
   add_foreign_key "tasks", "users"
   add_foreign_key "users", "industries"
 end

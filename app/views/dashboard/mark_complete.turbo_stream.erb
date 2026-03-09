@@ -1,3 +1,4 @@
+<%= turbo_stream.replace dom_id(@task), partial: "dashboard/task_row", locals: { task: @task, active_view: @active_view, active_employee: @active_employee } %>
 <%= turbo_stream.replace "task_#{@task.id}" do %>
   <tr class="bg-green-50">
     <td class="border px-4 py-2"><%= @task.title %></td>

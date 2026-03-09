@@ -48,15 +48,20 @@ class TasksController < ApplicationController
     end
   end
 
- def mark_complete
-  task = Task.find(params[:id])
-  task.update!(status: "completed")
+  # PATCH /tasks/:id/complete
+  # The routes expect an action named `complete` (see routes.rb member :complete).
+  # Rename from `mark_complete` to `complete` so before_action and routing align.
+  def complete
+    @task = Task.find(params[:id])
+    @task.update!(status: "completed")
 
-  redirect_back(
-    fallback_location: dashboard_index_path,
-    notice: "Task marked as complete"
-  )
-end
+    respond_to do |format|
+  format.turbo_stream
+      format.html do
+        redirect_back(fallback_location: dashboard_index_path, notice: "Task marked as complete")
+      end
+    end
+  end
 
 
 

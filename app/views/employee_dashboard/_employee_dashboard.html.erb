@@ -13,23 +13,7 @@
     </thead>
     <tbody>
       <% tasks.each do |task| %>
-        <tr class="<%= task.status == 'completed' ? 'bg-green-50' : task.due_date && task.due_date < Date.today ? 'bg-red-50' : '' %>">
-          <td class="border px-4 py-2"><%= task.title %></td>
-          <td class="border px-4 py-2"><%= task.status.humanize %></td>
-          <td class="border px-4 py-2"><%= task.due_date&.strftime("%b %d, %Y") || "N/A" %></td>
-          <td class="border px-4 py-2">
-            <% if task.user_id == employee.id && task.status != "completed" %>
-              <%= button_to "Mark Complete",
-                    mark_complete_dashboard_index_path(
-                      id: task.id,
-                      view: "employee",
-                      employee_id: employee.id
-                    ),
-                    method: :patch,
-                    class: "bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700" %>
-            <% end %>
-          </td>
-        </tr>
+        <%= render partial: "dashboard/task_row", locals: { task: task, active_view: 'employee', employee: employee } %>
       <% end %>
     </tbody>
   </table>
