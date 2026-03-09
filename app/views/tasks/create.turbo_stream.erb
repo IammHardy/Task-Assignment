@@ -1,4 +1,4 @@
-<%= turbo_stream.prepend "tasks-table" do %>
+<%= turbo_stream.prepend "tasks-body" do %>
   <%= render "dashboard/task_row",
       task: @task,
       active_view: @active_view,
@@ -16,5 +16,7 @@
 <% end %>
 
 <%= turbo_stream.replace "task-msg" do %>
-  <div class="text-green-700 font-semibold">Task created successfully!</div>
+  <div class="text-green-700 font-semibold">
+    Task created successfully!
+  </div>
 <% end %>

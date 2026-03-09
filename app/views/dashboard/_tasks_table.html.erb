@@ -1,5 +1,6 @@
 <div class="overflow-x-auto">
   <table class="min-w-full border border-gray-200 rounded">
+
     <thead class="bg-gray-100">
       <tr>
         <th class="px-4 py-2 border">Title</th>
@@ -12,15 +13,18 @@
       </tr>
     </thead>
 
-    <tbody id="tasks-table">
-      <% tasks_to_show.each do |task| %>
+    <tbody id="tasks-body">
+      <% (local_assigns[:tasks_to_show] || []).each do |task| %>
+
         <%= render "dashboard/task_row",
             task: task,
             active_view: active_view,
             current_user: current_user,
             employees: employees,
             managers: managers %>
+
       <% end %>
     </tbody>
+
   </table>
 </div>
